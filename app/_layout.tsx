@@ -6,6 +6,8 @@
  * segun el estado de sesion.
  */
 
+// Debe ir primero: APIs que el SDK de IA necesita y Hermes no trae.
+import '@/polyfills';
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -64,7 +66,7 @@ export default function RootLayout() {
   return (
     <TemaProvider alCargar={() => setTemaListo(true)}>
       {!fuentesListas || !temaListo ? (
-        <Cargando mensaje="Cargando recursos..." />
+        <Cargando mensaje="Cargando recursos..." fuenteSistema />
       ) : (
         <GestureHandlerRootView style={{ flex: 1 }}>
           <AuthProvider>

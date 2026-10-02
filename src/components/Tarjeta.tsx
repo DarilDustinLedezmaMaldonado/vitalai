@@ -3,7 +3,7 @@
  */
 
 import React, { ReactNode } from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
@@ -31,7 +31,7 @@ export function Tarjeta({
 }
 
 /** Logo de marca VitalAI con icono y texto. */
-export function Logo({ tamano = 'md' }: { tamano?: 'sm' | 'md' | 'lg' }) {
+export function Logo({ tamano = 'md', fuenteSistema = false }: { tamano?: 'sm' | 'md' | 'lg'; fuenteSistema?: boolean }) {
   const dim = tamano === 'lg' ? 64 : tamano === 'sm' ? 36 : 48;
   const fuente = tamano === 'lg' ? 32 : tamano === 'sm' ? 18 : 24;
 
@@ -45,7 +45,7 @@ export function Logo({ tamano = 'md' }: { tamano?: 'sm' | 'md' | 'lg' }) {
       >
         <Ionicons name="leaf" size={dim * 0.55} color={Colors.textOnPrimary} />
       </View>
-      <Text style={[styles.logoTexto, { fontSize: fuente }]}>
+      <Text style={[styles.logoTexto, { fontSize: fuente }, fuenteSistema && styles.logoSistema]}>
         Vital<Text style={styles.logoAcento}>AI</Text>
       </Text>
     </View>
@@ -82,6 +82,10 @@ const styles = crearEstilos(() => StyleSheet.create({
   logoTexto: {
     fontFamily: FontFamily.medium,
     color: Colors.textPrimary,
+  },
+  logoSistema: {
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif', default: 'sans-serif' }),
+    fontWeight: '500',
   },
   logoAcento: {
     color: Colors.marca,
