@@ -1,54 +1,70 @@
 /**
- * VitalAI - Paleta de colores
+ * VitalAI - Paleta "Fresca"
  *
- * Tema calido (naranja de marca) organizado con los roles de color de
- * Material 3, la estetica de los productos de Google (Google Fit):
- * superficies limpias, contenedores tonales y un acento fuerte.
+ * Verde azulado (salud, frescura) con coral de acento, organizada con los
+ * roles de color de Material 3. Cada metrica tiene su propio color, como en
+ * Google Fit, para que el panel se lea de un vistazo.
  *
- * - `marca` es el naranja vivo de VitalAI: logo, anillos de progreso, acentos.
- * - `primary` es la version profunda para fondos con texto blanco encima
- *   (contraste 3.4:1 frente a 2.6:1 del naranja de marca).
+ * - `marca`: verde azulado vivo para logo, anillos y acentos graficos.
+ * - `primary`: version profunda para fondos con texto blanco (contraste 5.2:1).
+ * - `metrica.*`: solo para graficos (anillos, barras, puntos), nunca para texto:
+ *   el coral y el ambar no alcanzan contraste suficiente como texto.
  */
 
 export const Colors = {
   // Marca y primario
-  marca: '#FF7A1A',            // Naranja VitalAI (logo, anillos, acentos)
-  primary: '#E8600C',          // Fondos con texto blanco (botones, tarjeta principal)
-  primaryDark: '#B84A00',      // Presionado / texto naranja sobre claro
-  primaryLight: '#FFB37A',     // Pista de anillos, bordes suaves
-  primaryContainer: '#FFE3D1', // Contenedor tonal (chips activos, indicador de pestaña)
-  onPrimaryContainer: '#5A2300',
+  marca: '#0E8C7A',            // Verde azulado VitalAI (logo, anillos, acentos)
+  primary: '#0B7A6A',          // Fondos con texto blanco (botones, tarjeta principal)
+  primaryDark: '#05665A',      // Texto de acento sobre fondos claros
+  primaryLight: '#7FD1C3',     // Bordes suaves, pistas
+  primaryContainer: '#D6F1EA', // Contenedor tonal (chips activos, indicador de pestaña)
+  onPrimaryContainer: '#05453C',
 
-  // Secundario
-  accent: '#FFC727',           // Amarillo motivacional (logros, hitos)
-  accentDark: '#E0A800',
+  // Acento coral (energia, motivacion)
+  accent: '#FF7A59',
+  accentDark: '#C2410C',       // Coral para texto sobre claro (5.2:1)
+  accentContainer: '#FFE8E1',
 
-  // Estados / feedback (tonos Google)
+  // Colores por metrica (solo graficos)
+  metrica: {
+    calorias: '#FF7A59',       // coral
+    agua: '#2F80ED',           // azul
+    proteina: '#7C5CE0',       // violeta
+    carbohidratos: '#F2B01E',  // ambar
+    grasas: '#E8578A',         // rosa
+  },
+  aguaContainer: '#E3EEFD',
+
+  // Estados / feedback
   success: '#1E8E3E',          // Meta cumplida
-  successContainer: '#E6F4EA',
-  warning: '#F9AB00',          // Alerta de hidratacion / recordatorio
+  successContainer: '#E3F4E8',
+  warning: '#F2B01E',          // Alerta de hidratacion / recordatorio
+  warningContainer: '#FFF4D6',
   danger: '#D93025',           // Error / fuera de balance
-  info: '#1A73E8',             // Informacion neutra, agua
-  infoContainer: '#E8F0FE',
+  info: '#2F80ED',             // Informacion neutra
+  infoContainer: '#E3EEFD',
 
-  // Superficies
-  background: '#FFFAF6',       // Fondo general (blanco calido)
-  surface: '#FFFFFF',          // Tarjetas
-  surfaceAlt: '#FFF1E8',       // Superficie tonal suave
-  surfaceContainer: '#F7EFE9', // Contenedor neutro (metricas, entradas)
+  // Superficies (fondo con leve tinte verde, no blanco plano)
+  background: '#F2FAF7',
+  surface: '#FFFFFF',
+  surfaceAlt: '#E6F5F0',       // Barra de navegacion, superficies suaves
+  surfaceContainer: '#E1F3EE', // Metricas, entradas, pistas de barras
 
   // Texto
-  textPrimary: '#1F1A16',      // Texto principal
-  textSecondary: '#5C4F45',    // Texto secundario
-  textMuted: '#857469',        // Texto tenue / placeholder (4.3:1)
-  textOnPrimary: '#FFFFFF',    // Texto sobre primario
+  textPrimary: '#13201D',
+  textSecondary: '#4A5C57',    // 6.7:1
+  textMuted: '#62746E',        // 4.7:1
+  textOnPrimary: '#FFFFFF',
 
   // Bordes y divisores
-  border: '#EADFD6',
-  divider: '#F2E9E2',
+  border: '#D5E8E2',
+  divider: '#E4F1EC',
+
+  // Velo detras de hojas modales
+  velo: 'rgba(19, 32, 29, 0.4)',
 
   // Sombra
-  shadow: '#2B2118',
+  shadow: '#13201D',
 };
 
 export default Colors;

@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   etiqueta: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF3D6',
+    backgroundColor: Colors.warningContainer,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.pill,

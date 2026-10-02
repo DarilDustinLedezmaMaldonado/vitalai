@@ -63,16 +63,16 @@ export default function Inicio() {
               tamano={148}
               grosor={13}
               anillos={[
-                { valor: consumidas, meta: requerimiento.caloriasObjetivo, color: Colors.marca, pista: Colors.primaryContainer },
-                { valor: vasos, meta: META_VASOS, color: Colors.info, pista: Colors.infoContainer },
+                { valor: consumidas, meta: requerimiento.caloriasObjetivo, color: Colors.metrica.calorias, pista: Colors.accentContainer },
+                { valor: vasos, meta: META_VASOS, color: Colors.metrica.agua, pista: Colors.aguaContainer },
               ]}
             >
               <Text style={styles.anilloValor}>{consumidas}</Text>
               <Text style={styles.anilloUnidad}>kcal</Text>
             </AnilloProgreso>
             <View style={styles.leyenda}>
-              <Leyenda color={Colors.marca} valor={`${consumidas} / ${requerimiento.caloriasObjetivo}`} etiqueta="Calorías" />
-              <Leyenda color={Colors.info} valor={`${vasos} / ${META_VASOS}`} etiqueta="Vasos de agua" />
+              <Leyenda color={Colors.metrica.calorias} valor={`${consumidas} / ${requerimiento.caloriasObjetivo}`} etiqueta="Calorías" />
+              <Leyenda color={Colors.metrica.agua} valor={`${vasos} / ${META_VASOS}`} etiqueta="Vasos de agua" />
               <Text style={styles.restantes}>
                 {restantes >= 0 ? `Te quedan ${restantes} kcal` : `Superaste tu meta por ${-restantes} kcal`}
               </Text>
@@ -80,9 +80,9 @@ export default function Inicio() {
           </View>
           <View style={styles.divisor} />
           <View style={styles.macros}>
-            <BarraMacro etiqueta="Proteína" valor={registroHoy?.proteinasG ?? 0} meta={requerimiento.proteinasG} />
-            <BarraMacro etiqueta="Carbos" valor={registroHoy?.carbohidratosG ?? 0} meta={requerimiento.carbohidratosG} />
-            <BarraMacro etiqueta="Grasas" valor={registroHoy?.grasasG ?? 0} meta={requerimiento.grasasG} />
+            <BarraMacro etiqueta="Proteína" color={Colors.metrica.proteina} valor={registroHoy?.proteinasG ?? 0} meta={requerimiento.proteinasG} />
+            <BarraMacro etiqueta="Carbos" color={Colors.metrica.carbohidratos} valor={registroHoy?.carbohidratosG ?? 0} meta={requerimiento.carbohidratosG} />
+            <BarraMacro etiqueta="Grasas" color={Colors.metrica.grasas} valor={registroHoy?.grasasG ?? 0} meta={requerimiento.grasasG} />
           </View>
         </Tarjeta>
 
@@ -155,12 +155,12 @@ function Leyenda({ color, valor, etiqueta }: { color: string; valor: string; eti
 }
 
 /** Macronutriente consumido frente a su meta, con barra de progreso. */
-function BarraMacro({ etiqueta, valor, meta }: { etiqueta: string; valor: number; meta: number }) {
+function BarraMacro({ etiqueta, valor, meta, color }: { etiqueta: string; valor: number; meta: number; color: string }) {
   const porcentaje = meta > 0 ? Math.min(100, (valor / meta) * 100) : 0;
   return (
     <View style={styles.macro}>
       <Text style={styles.macroEtiqueta}>{etiqueta}</Text>
-      <View style={styles.barraFondo}><View style={[styles.barra, { width: `${porcentaje}%` }]} /></View>
+      <View style={styles.barraFondo}><View style={[styles.barra, { width: `${porcentaje}%`, backgroundColor: color }]} /></View>
       <Text style={styles.macroValor}>{Math.round(valor)}<Text style={styles.macroMeta}> / {meta} g</Text></Text>
     </View>
   );
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
   encabezadoTexto: { flex: 1 },
   saludo: { ...Typography.body, color: Colors.textSecondary },
   nombre: { ...Typography.title, color: Colors.textPrimary },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primaryContainer, alignItems: 'center', justifyContent: 'center' },
-  avatarTexto: { ...Typography.sectionTitle, color: Colors.onPrimaryContainer },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  avatarTexto: { ...Typography.sectionTitle, color: Colors.textOnPrimary },
   hoy: { padding: Spacing.xl },
   hoyFila: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xl },
   anilloValor: { ...Typography.subtitle, color: Colors.textPrimary },
@@ -195,13 +195,13 @@ const styles = StyleSheet.create({
   punto: { width: 10, height: 10, borderRadius: 5, marginTop: 7 },
   leyendaValor: { ...Typography.bodyStrong, color: Colors.textPrimary },
   leyendaEtiqueta: { ...Typography.caption, color: Colors.textSecondary },
-  restantes: { ...Typography.label, color: Colors.primaryDark },
+  restantes: { ...Typography.label, color: Colors.accentDark },
   divisor: { height: 1, backgroundColor: Colors.divider, marginVertical: Spacing.lg },
   macros: { flexDirection: 'row', gap: Spacing.md },
   macro: { flex: 1, gap: 6 },
   macroEtiqueta: { ...Typography.caption, color: Colors.textSecondary },
   barraFondo: { height: 6, borderRadius: 3, backgroundColor: Colors.surfaceContainer, overflow: 'hidden' },
-  barra: { height: '100%', borderRadius: 3, backgroundColor: Colors.marca },
+  barra: { height: '100%', borderRadius: 3 },
   macroValor: { ...Typography.label, color: Colors.textPrimary },
   macroMeta: { fontFamily: Typography.caption.fontFamily, color: Colors.textMuted },
   resto: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, backgroundColor: Colors.primaryContainer, borderRadius: Radius.lg, padding: Spacing.lg, marginTop: Spacing.md },

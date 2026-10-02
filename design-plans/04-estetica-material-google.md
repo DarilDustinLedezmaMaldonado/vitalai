@@ -27,3 +27,10 @@
   resto del día; métricas en contenedores tonales; coach.
 - Resto de pantallas: heredan tokens y componentes; rediseño específico por pantalla
   en planes posteriores.
+
+## Actualización 2026-10-02 — Paleta "Fresca" (elegida por el usuario)
+- Primario verde azulado (#0E8C7A marca / #0B7A6A con texto blanco, 5.2:1) y coral de acento.
+- Fondos con tinte verde suave en lugar de blanco plano.
+- Un color por métrica, solo en gráficos: calorías coral, agua azul, proteína violeta,
+  carbohidratos ámbar, grasas rosa.
+- Colores escritos a mano reemplazados por tokens (contenedores de estado, velo modal).

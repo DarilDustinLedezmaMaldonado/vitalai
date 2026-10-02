@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FF7A1A"
+      "backgroundColor": "#0E8C7A"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FF7A1A"
+        "backgroundColor": "#0E8C7A"
       },
       "package": "com.ledezma.vitalai",
       "permissions": ["CAMERA", "RECORD_AUDIO", "ACTIVITY_RECOGNITION"]
