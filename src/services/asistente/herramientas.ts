@@ -252,3 +252,28 @@ export async function ejecutarHerramienta(
     return { resultado: { ok: false, motivo: e instanceof Error ? e.message : 'Error al ejecutar la acción' } };
   }
 }
+
+/* ------------------------- Ejecucion por mensaje ------------------------ */
+
+/** Herramientas que modifican datos: no deben ejecutarse dos veces iguales. */
+const HERRAMIENTAS_DE_REGISTRO = new Set(['registrar_alimento', 'marcar_comida_del_plan', 'registrar_agua', 'registrar_peso']);
+
+/**
+ * Ejecutor para un mensaje del usuario. Si el modelo pide dos veces el mismo
+ * registro (mismo alimento, gramos y comida) en un mismo mensaje, la segunda
+ * no se ejecuta: se le responde que ya estaba registrado. Asi un modelo que
+ * repite llamadas no duplica comidas.
+ */
+export function crearEjecutorDeMensaje(contexto: ContextoAsistente) {
+  const realizados = new Set<string>();
+  return async (nombre: string, args: Record<string, unknown>) => {
+    if (HERRAMIENTAS_DE_REGISTRO.has(nombre)) {
+      const clave = `${nombre}:${JSON.stringify(Object.keys(args).sort().map((k) => [k, args[k]]))}`;
+      if (realizados.has(clave)) {
+        return { resultado: { ok: true, nota: 'Ya se registró en este mensaje. No lo repitas.' } };
+      }
+      realizados.add(clave);
+    }
+    return ejecutarHerramienta(nombre, args, contexto);
+  };
+}
