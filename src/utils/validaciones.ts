@@ -30,16 +30,16 @@ export function validarRegistro(
   confirmar: string
 ): string | null {
   if (!esNombreValido(nombre)) return 'Ingresa tu nombre completo.';
-  if (!esCorreoValido(correo)) return 'Ingresa un correo valido.';
+  if (!esCorreoValido(correo)) return 'Ingresa un correo válido.';
   if (!esPasswordValida(password))
-    return 'La contrasena debe tener al menos 6 caracteres.';
-  if (password !== confirmar) return 'Las contrasenas no coinciden.';
+    return 'La contraseña debe tener al menos 6 caracteres.';
+  if (password !== confirmar) return 'Las contraseñas no coinciden.';
   return null;
 }
 
 /** Valida un formulario de inicio de sesion. */
 export function validarLogin(correo: string, password: string): string | null {
-  if (!esCorreoValido(correo)) return 'Ingresa un correo valido.';
-  if (password.length === 0) return 'Ingresa tu contrasena.';
+  if (!esCorreoValido(correo)) return 'Ingresa un correo válido.';
+  if (password.length === 0) return 'Ingresa tu contraseña.';
   return null;
 }

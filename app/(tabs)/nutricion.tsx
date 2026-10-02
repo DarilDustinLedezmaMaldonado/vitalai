@@ -33,6 +33,7 @@ import {
   obtenerConfiguracion,
   obtenerRegistroDia,
 } from '@/services/datosService';
+import { hapticaExito, hapticaSeleccion } from '@/utils/haptica';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -162,6 +163,7 @@ export default function Nutricion() {
   }
 
   function alternarComida(id: string) {
+    if (!comidasCompletadas.includes(id)) hapticaExito();
     dia.actualizar((actual) => ({
       ...actual,
       comidasCompletadas: actual.comidasCompletadas.includes(id)
@@ -171,6 +173,7 @@ export default function Nutricion() {
   }
 
   function setVasosAgua(vasos: number) {
+    hapticaSeleccion();
     dia.actualizar((actual) => ({ ...actual, vasosAgua: vasos }));
   }
 
@@ -195,6 +198,7 @@ export default function Nutricion() {
       ...calcularAportePorcion(alimentoSeleccionado, cantidad),
     };
     dia.actualizar((actual) => ({ ...actual, alimentos: [...actual.alimentos, nuevo] }));
+    hapticaExito();
   }
 
   function quitarAlimento(id: string) {
@@ -234,10 +238,10 @@ export default function Nutricion() {
       const nombre = buscarAlimento(alimentoId)?.nombre ?? 'el ingrediente';
       textos.push(sustitucion
         ? `${comida.momento}: ${sustitucion.explicacion}`
-        : `${comida.momento}: quitamos ${nombre} porque no queda otro alimento parecido disponible. Las verduras y frutas aportan pocas calorias, asi que tu meta casi no cambia.`);
+        : `${comida.momento}: quitamos ${nombre} porque no queda otro alimento parecido disponible. Las verduras y frutas aportan pocas calorias, así que tu meta casi no cambia.`);
       return {
         ...comida,
-        detalle: 'Ajustado segun los alimentos que tienes',
+        detalle: 'Ajustado según los alimentos que tienes',
         alimentos: sustitucion
           ? comida.alimentos.map((item) => (item.alimentoId === alimentoId ? sustitucion.reemplazo : item))
           : comida.alimentos.filter((item) => item.alimentoId !== alimentoId),
@@ -270,7 +274,7 @@ export default function Nutricion() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.encabezado}>Nutricion adaptativa</Text>
+        <Text style={styles.encabezado}>Nutrición adaptativa</Text>
         <Text style={styles.subencabezado}>
           Un plan sencillo para avanzar hacia tu objetivo.
         </Text>
@@ -299,12 +303,12 @@ export default function Nutricion() {
         </Tarjeta>
 
         <View style={styles.filaMacros}>
-          <Macro etiqueta="Proteina" valor={`${Math.round(consumido.proteinasG)}/${requerimiento.proteinasG} g`} />
+          <Macro etiqueta="Proteína" valor={`${Math.round(consumido.proteinasG)}/${requerimiento.proteinasG} g`} />
           <Macro etiqueta="Carbohidratos" valor={`${Math.round(consumido.carbohidratosG)}/${requerimiento.carbohidratosG} g`} />
           <Macro etiqueta="Grasas" valor={`${Math.round(consumido.grasasG)}/${requerimiento.grasasG} g`} />
         </View>
 
-        <Text style={styles.seccion}>Agregar alimento</Text>
+        <Text style={[styles.seccion, styles.seccionBloque]}>Agregar alimento</Text>
         <Text style={styles.fuenteIntro}>
           Valores oficiales USDA FoodData Central por 100 g de parte comestible.
         </Text>
@@ -430,13 +434,13 @@ export default function Nutricion() {
         )}
 
         <View style={styles.tituloFila}>
-          <View><Text style={styles.seccion}>Plan de comidas</Text><Text style={styles.seccionAyuda}>Plan diario: {caloriasPlan} kcal · Marca una comida al completarla. Toca ⇄ si te falta un ingrediente.</Text></View>
+          <View style={styles.tituloBloque}><Text style={styles.seccion}>Plan de comidas</Text><Text style={styles.seccionAyuda}>Plan diario: {caloriasPlan} kcal · Marca una comida al completarla. Toca ⇄ si te falta un ingrediente.</Text></View>
           <View style={styles.contadorColumna}><Text style={styles.contador}>{comidasCompletadas.length}/{planComidas.length}</Text><Pressable onPress={() => setModalPlan(true)}><Ionicons name="add-circle" size={25} color={Colors.primary} /></Pressable></View>
         </View>
 
         {explicaciones.length > 0 && (
           <View style={styles.explicacionCard}>
-            <View style={styles.explicacionTitulo}><Ionicons name="school-outline" size={18} color={Colors.primaryDark} /><Text style={styles.explicacionEncabezado}>Por que cambiamos tu plan</Text><Pressable onPress={() => setExplicaciones([])} hitSlop={8}><Ionicons name="close" size={18} color={Colors.textMuted} /></Pressable></View>
+            <View style={styles.explicacionTitulo}><Ionicons name="school-outline" size={18} color={Colors.primaryDark} /><Text style={styles.explicacionEncabezado}>Por qué cambiamos tu plan</Text><Pressable onPress={() => setExplicaciones([])} hitSlop={8}><Ionicons name="close" size={18} color={Colors.textMuted} /></Pressable></View>
             {explicaciones.map((texto) => <Text key={texto} style={styles.explicacionTexto}>{texto}</Text>)}
           </View>
         )}
@@ -493,7 +497,7 @@ export default function Nutricion() {
         <Tarjeta estilo={styles.aguaCard}>
           <View style={styles.aguaEncabezado}>
             <View>
-              <Text style={styles.seccionInterna}>Hidratacion</Text>
+              <Text style={styles.seccionInterna}>Hidratación</Text>
               <Text style={styles.aguaTexto}>{vasosAgua} de 8 vasos registrados</Text>
             </View>
             <Ionicons name="water-outline" size={28} color={Colors.info} />
@@ -544,7 +548,7 @@ export default function Nutricion() {
                     <Pressable onPress={() => setModalPlan(false)}><Ionicons name="close" size={24} color={Colors.textSecondary} /></Pressable>
                   </View>
                   <Text style={styles.inputLabel}>Nombre de la comida</Text>
-                  <TextInput value={nombreNuevaComida} onChangeText={setNombreNuevaComida} placeholder="Ej. Ensalada de atun" placeholderTextColor={Colors.textMuted} style={styles.modalInput} />
+                  <TextInput value={nombreNuevaComida} onChangeText={setNombreNuevaComida} placeholder="Ej. Ensalada de atún" placeholderTextColor={Colors.textMuted} style={styles.modalInput} />
                   <Text style={styles.inputLabel}>Momento del día</Text>
                   <View style={styles.opcionesFila}>{['Desayuno', 'Almuerzo', 'Merienda', 'Cena', 'Colacion'].map((momento) => <Pressable key={momento} onPress={() => setMomentoNuevaComida(momento)} style={[styles.opcionModal, momentoNuevaComida === momento && styles.opcionModalActiva]}><Text style={[styles.opcionModalTexto, momentoNuevaComida === momento && styles.opcionModalTextoActivo]}>{momento}</Text></Pressable>)}</View>
                   <Text style={styles.inputLabel}>Alimentos de la comida</Text>
@@ -563,7 +567,7 @@ export default function Nutricion() {
         </Tarjeta>
 
         <Boton
-          titulo="Reiniciar plan del dia"
+          titulo="Reiniciar plan del día"
           variante="secondary"
           onPress={() => dia.actualizar((actual) => ({ ...actual, comidasCompletadas: [] }))}
           estilo={styles.boton}
@@ -601,7 +605,8 @@ const styles = StyleSheet.create({
   tituloFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.md },
   contadorColumna: { alignItems: 'center', gap: Spacing.xs },
   seccion: { ...Typography.sectionTitle, color: Colors.textPrimary },
-  seccionAyuda: { ...Typography.caption, color: Colors.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.md },
+  seccionAyuda: { ...Typography.caption, color: Colors.textSecondary, marginTop: Spacing.xs },
+  tituloBloque: { flex: 1, marginRight: Spacing.md },
   contador: { ...Typography.caption, color: Colors.primary },
   comida: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   comidaCompleta: { borderColor: Colors.success, backgroundColor: '#F1FBF4' },
@@ -661,7 +666,8 @@ const styles = StyleSheet.create({
   ingredienteFila: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.divider, gap: Spacing.sm },
   noTengoBoton: { borderWidth: 1, borderColor: Colors.danger, borderRadius: Radius.pill, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
   noTengoTexto: { ...Typography.caption, color: Colors.danger },
-  fuenteIntro: { ...Typography.caption, color: Colors.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.sm },
+  seccionBloque: { marginTop: Spacing.xl },
+  fuenteIntro: { ...Typography.caption, color: Colors.textSecondary, marginTop: Spacing.xs, marginBottom: Spacing.md },
   buscador: { flexDirection: 'row', alignItems: 'center', height: 48, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md },
   buscadorInput: { flex: 1, ...Typography.body, color: Colors.textPrimary, marginLeft: Spacing.sm },
   resultadosTexto: { ...Typography.caption, color: Colors.textMuted, marginTop: Spacing.sm },

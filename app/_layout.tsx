@@ -1,7 +1,7 @@
 /**
  * VitalAI - Layout raiz de la aplicacion
  *
- * Carga las fuentes Poppins, envuelve la app con el proveedor de
+ * Carga la fuente Google Sans, envuelve la app con el proveedor de
  * autenticacion y enruta entre el grupo (auth) y el grupo (tabs)
  * segun el estado de sesion.
  */
@@ -10,13 +10,13 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts } from 'expo-font';
 import {
-  useFonts,
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-} from '@expo-google-fonts/poppins';
+  GoogleSans_400Regular,
+  GoogleSans_500Medium,
+  GoogleSans_600SemiBold,
+  GoogleSans_700Bold,
+} from '@expo-google-fonts/google-sans';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import Cargando from '@/components/Cargando';
 
@@ -50,10 +50,10 @@ function Enrutador() {
 
 export default function RootLayout() {
   const [fuentesListas] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
+    GoogleSans_400Regular,
+    GoogleSans_500Medium,
+    GoogleSans_600SemiBold,
+    GoogleSans_700Bold,
   });
 
   if (!fuentesListas) {

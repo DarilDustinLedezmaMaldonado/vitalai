@@ -54,7 +54,7 @@ export async function registrarAlimento(
 ): Promise<{ registrado: AlimentoRegistrado; totales: AportePorcion }> {
   const alimento = buscarAlimento(alimentoId);
   if (!alimento) throw new Error(`Alimento desconocido: ${alimentoId}`);
-  if (!Number.isFinite(gramos) || gramos <= 0 || gramos > 3000) throw new Error('Cantidad de gramos no valida');
+  if (!Number.isFinite(gramos) || gramos <= 0 || gramos > 3000) throw new Error('Cantidad de gramos no válida');
   const registro = await obtenerRegistroDia(uid, fechaLocal());
   const registrado: AlimentoRegistrado = {
     id: `${alimentoId}-${Date.now()}`,

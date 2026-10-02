@@ -67,7 +67,7 @@ export default function Registro() {
     const alturaNumero = Number(alturaCm);
     const pesoNumero = Number(pesoKg);
     if (!Number.isFinite(edadNumero) || edadNumero < 13 || edadNumero > 100 || !Number.isFinite(alturaNumero) || alturaNumero < 100 || alturaNumero > 240 || !Number.isFinite(pesoNumero) || pesoNumero < 30 || pesoNumero > 300) {
-      setError('Revisa edad, altura y peso. Ingresa valores validos para continuar.');
+      setError('Revisa edad, altura y peso. Ingresa valores válidos para continuar.');
       return;
     }
 
@@ -136,7 +136,7 @@ export default function Registro() {
 
           <Text style={styles.titulo}>{paso === 1 ? 'Crea tu cuenta' : 'Conoce tu punto de partida'}</Text>
           <Text style={styles.subtitulo}>
-            {paso === 1 ? 'Empieza hoy tu camino hacia una vida mas saludable.' : 'Usaremos estos datos para estimar tus calorias y personalizar tu plan.'}
+            {paso === 1 ? 'Empieza hoy tu camino hacia una vida más saludable.' : 'Usaremos estos datos para estimar tus calorias y personalizar tu plan.'}
           </Text>
 
           <View style={styles.formulario}>
@@ -149,7 +149,7 @@ export default function Registro() {
               onChangeText={setNombre}
               />
               <CampoTexto
-              etiqueta="Correo electronico"
+              etiqueta="Correo electrónico"
               icono="mail-outline"
               placeholder="tucorreo@ejemplo.com"
               keyboardType="email-address"
@@ -158,33 +158,33 @@ export default function Registro() {
               onChangeText={setCorreo}
               />
               <CampoTexto
-              etiqueta="Contrasena"
+              etiqueta="Contraseña"
               icono="lock-closed-outline"
-              placeholder="Minimo 6 caracteres"
+              placeholder="Mínimo 6 caracteres"
               esPassword
               value={password}
               onChangeText={setPassword}
               />
               <CampoTexto
-              etiqueta="Confirmar contrasena"
+              etiqueta="Confirmar contraseña"
               icono="lock-closed-outline"
-              placeholder="Repite tu contrasena"
+              placeholder="Repite tu contraseña"
               esPassword
               value={confirmar}
               onChangeText={setConfirmar}
               />
             </> : <>
-              <Text style={styles.etiqueta}>Sexo biologico</Text>
+              <Text style={styles.etiqueta}>Sexo biológico</Text>
               <Selector opciones={[['femenino', 'Mujer'], ['masculino', 'Hombre']]} valor={sexo} onChange={(valor) => setSexo(valor as Sexo)} />
               <View style={styles.filaCampos}>
                 <CampoTexto etiqueta="Edad" icono="calendar-outline" keyboardType="number-pad" value={edad} onChangeText={setEdad} contenedorStyle={styles.campoMitad} />
                 <CampoTexto etiqueta="Altura (cm)" icono="resize-outline" keyboardType="number-pad" value={alturaCm} onChangeText={setAlturaCm} contenedorStyle={styles.campoMitad} />
               </View>
               <CampoTexto etiqueta="Peso actual (kg)" icono="scale-outline" keyboardType="decimal-pad" value={pesoKg} onChangeText={setPesoKg} />
-              <Text style={styles.etiqueta}>Nivel de actividad fisica</Text>
+              <Text style={styles.etiqueta}>Nivel de actividad física</Text>
               <Selector opciones={[['sedentario', 'Sedentario'], ['ligero', 'Ligero'], ['moderado', 'Moderado'], ['activo', 'Activo'], ['muy_activo', 'Muy activo']]} valor={actividad} onChange={(valor) => setActividad(valor as NivelActividad)} />
-              <Text style={styles.etiqueta}>Que quieres lograr?</Text>
-              <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar musculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
+              <Text style={styles.etiqueta}>¿Qué quieres lograr?</Text>
+              <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar músculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
               <View style={styles.caloriasPreview}><Ionicons name="flame-outline" size={20} color={Colors.primary} /><Text style={styles.caloriasPreviewTexto}>Meta estimada: <Text style={styles.caloriasPreviewNumero}>{caloriasEstimadas || '--'} kcal/dia</Text></Text></View>
             </>}
 
@@ -200,9 +200,9 @@ export default function Registro() {
           </View>
 
           <View style={styles.pie}>
-            <Text style={styles.pieTexto}>Ya tienes cuenta? </Text>
+            <Text style={styles.pieTexto}>¿Ya tienes cuenta? </Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
-              <Text style={styles.pieEnlace}>Inicia sesion</Text>
+              <Text style={styles.pieEnlace}>Inicia sesión</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

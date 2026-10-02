@@ -40,7 +40,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'manzana-cruda',
-    nombre: 'Manzana con cascara',
+    nombre: 'Manzana con cáscara',
     categoria: 'Frutas',
     unidadReferencia: '100 g',
     caloriasPor100g: 52,
@@ -157,7 +157,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'papa-cocida',
-    nombre: 'Papa cocida con cascara',
+    nombre: 'Papa cocida con cáscara',
     categoria: 'Tuberculos',
     unidadReferencia: '100 g',
     caloriasPor100g: 87,
@@ -209,7 +209,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'atun-agua',
-    nombre: 'Atun claro en agua',
+    nombre: 'Atún claro en agua',
     categoria: 'Proteinas',
     unidadReferencia: '100 g',
     caloriasPor100g: 116,
@@ -222,7 +222,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'trucha-cocida',
-    nombre: 'Trucha arcoiris cocida',
+    nombre: 'Trucha arcoíris cocida',
     categoria: 'Proteinas',
     unidadReferencia: '100 g',
     caloriasPor100g: 168,
@@ -274,7 +274,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
     fuente: 'USDA FoodData Central - SR Legacy (FDC 172424)',
     urlFuente: 'https://fdc.nal.usda.gov/food-details/172424/nutrients',
     local: true,
-    nota: 'Ficha USDA: Lupins, mature seeds, cooked, boiled, without salt. El tarwi es Lupinus mutabilis; se usa la ficha de lupino como referencia mas cercana.',
+    nota: 'Ficha USDA: Lupins, mature seeds, cooked, boiled, without salt. El tarwi es Lupinus mutabilis; se usa la ficha de lupino como referencia más cercana.',
   },
   {
     id: 'habas-cocidas',
@@ -308,7 +308,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'mote-maiz',
-    nombre: 'Mote de maiz blanco',
+    nombre: 'Mote de maíz blanco',
     categoria: 'Cereales',
     unidadReferencia: '100 g',
     caloriasPor100g: 72,
@@ -319,7 +319,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
     fuente: 'USDA FoodData Central - SR Legacy (FDC 169701)',
     urlFuente: 'https://fdc.nal.usda.gov/food-details/169701/nutrients',
     local: true,
-    nota: 'Ficha USDA: Hominy, canned, white (maiz pelado cocido). Referencia mas cercana al mote de maiz.',
+    nota: 'Ficha USDA: Hominy, canned, white (maíz pelado cocido). Referencia más cercana al mote de maíz.',
   },
   {
     id: 'choclo-cocido',
@@ -353,7 +353,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'camote-cocido',
-    nombre: 'Camote cocido sin cascara',
+    nombre: 'Camote cocido sin cáscara',
     categoria: 'Tuberculos',
     unidadReferencia: '100 g',
     caloriasPor100g: 76,
@@ -368,7 +368,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
   },
   {
     id: 'platano-horneado',
-    nombre: 'Platano maduro horneado',
+    nombre: 'Plátano maduro horneado',
     categoria: 'Tuberculos',
     unidadReferencia: '100 g',
     caloriasPor100g: 155,
@@ -379,7 +379,7 @@ export const alimentosUSDA: AlimentoUSDA[] = [
     fuente: 'USDA FoodData Central - SR Legacy (FDC 169131)',
     urlFuente: 'https://fdc.nal.usda.gov/food-details/169131/nutrients',
     local: true,
-    nota: 'Ficha USDA: Plantains, yellow, baked. Se agrupa con tuberculos y raices como fuente de almidon.',
+    nota: 'Ficha USDA: Plantains, yellow, baked. Se agrupa con tubérculos y raíces como fuente de almidón.',
   },
   {
     id: 'queso-fresco',
@@ -409,6 +409,6 @@ export const alimentosUSDA: AlimentoUSDA[] = [
     fuente: 'USDA FoodData Central - SR Legacy (FDC 170604)',
     urlFuente: 'https://fdc.nal.usda.gov/food-details/170604/nutrients',
     local: true,
-    nota: 'Ficha USDA: Beef, cured, dried. Referencia mas cercana al charque; el charque casero puede variar en sal y humedad.',
+    nota: 'Ficha USDA: Beef, cured, dried. Referencia más cercana al charque; el charque casero puede variar en sal y humedad.',
   },
 ];

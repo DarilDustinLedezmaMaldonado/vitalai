@@ -1,13 +1,14 @@
 /**
  * VitalAI - Sistema tipografico
- * Familia: Poppins (geometrica, amigable, alta legibilidad en movil).
+ * Familia: Google Sans (la de los productos de Google, licencia OFL).
+ * Escala basada en la tipografia de Material 3.
  */
 
 export const FontFamily = {
-  regular: 'Poppins_400Regular',
-  medium: 'Poppins_500Medium',
-  semiBold: 'Poppins_600SemiBold',
-  bold: 'Poppins_700Bold',
+  regular: 'GoogleSans_400Regular',
+  medium: 'GoogleSans_500Medium',
+  semiBold: 'GoogleSans_600SemiBold',
+  bold: 'GoogleSans_700Bold',
 };
 
 export const FontSize = {
@@ -25,24 +26,26 @@ export const FontSize = {
  */
 export const Typography = {
   display: {
-    fontFamily: FontFamily.bold,
-    fontSize: FontSize.display,
-    lineHeight: 42,
+    fontFamily: FontFamily.medium,
+    fontSize: 36,
+    lineHeight: 44,
+    letterSpacing: -0.5,
   },
   title: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.medium,
     fontSize: FontSize.xxl,
     lineHeight: 36,
+    letterSpacing: -0.25,
   },
   subtitle: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.medium,
     fontSize: FontSize.xl,
-    lineHeight: 30,
+    lineHeight: 28,
   },
   sectionTitle: {
-    fontFamily: FontFamily.semiBold,
+    fontFamily: FontFamily.medium,
     fontSize: FontSize.lg,
-    lineHeight: 26,
+    lineHeight: 24,
   },
   body: {
     fontFamily: FontFamily.regular,
@@ -63,11 +66,13 @@ export const Typography = {
     fontFamily: FontFamily.medium,
     fontSize: FontSize.sm,
     lineHeight: 20,
+    letterSpacing: 0.1,
   },
   button: {
-    fontFamily: FontFamily.semiBold,
-    fontSize: FontSize.md,
-    lineHeight: 22,
+    fontFamily: FontFamily.medium,
+    fontSize: 15,
+    lineHeight: 20,
+    letterSpacing: 0.1,
   },
 };
 

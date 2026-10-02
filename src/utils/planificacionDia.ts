@@ -280,18 +280,18 @@ export function planificarRestoDelDia(
   const nombres = comidas.map((c) => c.momento.toLowerCase()).join(' y ');
   const totalPlan = comidas.reduce((t, c) => t + c.aporte.calorias, 0);
   let estado: EstadoDia = 'en_curso';
-  let mensaje = `Te quedan ${restante.calorias} kcal y ${restante.proteinasG} g de proteina para ${nombres}. ` +
-    'Ajustamos las porciones priorizando proteina y verduras: son lo que mas sacia con menos calorias.';
+  let mensaje = `Te quedan ${restante.calorias} kcal y ${restante.proteinasG} g de proteína para ${nombres}. ` +
+    'Ajustamos las porciones priorizando proteína y verduras: son lo que más sacia con menos calorias.';
 
   if (metaAlcanzada) {
     estado = 'meta_alcanzada';
     mensaje = restante.calorias <= 0
-      ? `Hoy ya llegaste a tu meta (te pasaste por ${-restante.calorias} kcal). No hace falta compensar dejando de comer: si tienes hambre, elige opciones ligeras como estas. Un dia no define tu progreso.`
-      : `Estas muy cerca de tu meta. Para ${nombres} te sugerimos opciones ligeras con proteina y verduras, que sacian sin pasarte.`;
+      ? `Hoy ya llegaste a tu meta (te pasaste por ${-restante.calorias} kcal). No hace falta compensar dejando de comer: si tienes hambre, elige opciones ligeras como estas. Un día no define tu progreso.`
+      : `Estás muy cerca de tu meta. Para ${nombres} te sugerimos opciones ligeras con proteína y verduras, que sacian sin pasarte.`;
   } else if (tarde) {
     estado = 'tarde_con_deficit';
     mensaje = `Te faltan ${restante.calorias} kcal, pero no es recomendable comerlas todas de golpe. ` +
-      `Ajustamos ${nombres} a una porcion razonable (${totalPlan} kcal). Mañana intenta repartir mejor tus comidas.`;
+      `Ajustamos ${nombres} a una porción razonable (${totalPlan} kcal). Mañana intenta repartir mejor tus comidas.`;
   }
 
   return { estado, restante, comidas, mensaje };

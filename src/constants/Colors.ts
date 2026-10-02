@@ -1,40 +1,51 @@
 /**
  * VitalAI - Paleta de colores
- * Tema calido y motivacional (naranjas / amarillos).
- * Transmite energia, optimismo y constancia: atributos alineados con el
- * proposito del proyecto de combatir el abandono y la baja adherencia.
+ *
+ * Tema calido (naranja de marca) organizado con los roles de color de
+ * Material 3, la estetica de los productos de Google (Google Fit):
+ * superficies limpias, contenedores tonales y un acento fuerte.
+ *
+ * - `marca` es el naranja vivo de VitalAI: logo, anillos de progreso, acentos.
+ * - `primary` es la version profunda para fondos con texto blanco encima
+ *   (contraste 3.4:1 frente a 2.6:1 del naranja de marca).
  */
 
 export const Colors = {
-  // Marca principal
-  primary: '#FF7A1A',        // Naranja energetico (color de marca)
-  primaryDark: '#E0640A',    // Naranja oscuro (presionado / acentos)
-  primaryLight: '#FFB066',   // Naranja claro (fondos suaves)
+  // Marca y primario
+  marca: '#FF7A1A',            // Naranja VitalAI (logo, anillos, acentos)
+  primary: '#E8600C',          // Fondos con texto blanco (botones, tarjeta principal)
+  primaryDark: '#B84A00',      // Presionado / texto naranja sobre claro
+  primaryLight: '#FFB37A',     // Pista de anillos, bordes suaves
+  primaryContainer: '#FFE3D1', // Contenedor tonal (chips activos, indicador de pestaña)
+  onPrimaryContainer: '#5A2300',
 
   // Secundario
-  accent: '#FFC727',         // Amarillo motivacional (logros, hitos)
+  accent: '#FFC727',           // Amarillo motivacional (logros, hitos)
   accentDark: '#E0A800',
 
-  // Estados / feedback
-  success: '#3FB76B',        // Meta cumplida
-  warning: '#F5A623',        // Alerta de hidratacion / recordatorio
-  danger: '#E5484D',         // Error / fuera de balance
-  info: '#3E7BFA',           // Informacion neutra
+  // Estados / feedback (tonos Google)
+  success: '#1E8E3E',          // Meta cumplida
+  successContainer: '#E6F4EA',
+  warning: '#F9AB00',          // Alerta de hidratacion / recordatorio
+  danger: '#D93025',           // Error / fuera de balance
+  info: '#1A73E8',             // Informacion neutra, agua
+  infoContainer: '#E8F0FE',
 
-  // Neutros
-  background: '#FFF9F3',     // Fondo general (blanco calido)
-  surface: '#FFFFFF',        // Tarjetas y superficies
-  surfaceAlt: '#FFF1E3',     // Superficie alternativa (naranja muy claro)
+  // Superficies
+  background: '#FFFAF6',       // Fondo general (blanco calido)
+  surface: '#FFFFFF',          // Tarjetas
+  surfaceAlt: '#FFF1E8',       // Superficie tonal suave
+  surfaceContainer: '#F7EFE9', // Contenedor neutro (metricas, entradas)
 
   // Texto
-  textPrimary: '#2B2118',    // Texto principal (marron oscuro calido)
-  textSecondary: '#7A6E63',  // Texto secundario
-  textMuted: '#A89B8E',      // Texto deshabilitado / placeholder
-  textOnPrimary: '#FFFFFF',  // Texto sobre fondo naranja
+  textPrimary: '#1F1A16',      // Texto principal
+  textSecondary: '#5C4F45',    // Texto secundario
+  textMuted: '#857469',        // Texto tenue / placeholder (4.3:1)
+  textOnPrimary: '#FFFFFF',    // Texto sobre primario
 
   // Bordes y divisores
-  border: '#EFE3D5',
-  divider: '#F2E8DC',
+  border: '#EADFD6',
+  divider: '#F2E9E2',
 
   // Sombra
   shadow: '#2B2118',

@@ -5,10 +5,12 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
+import GraficoLinea from '@/components/GraficoLinea';
 import { calcularResumenProgreso } from '@/services/analisisService';
 import { fechaLocal, guardarRegistroDia } from '@/services/datosService';
 import { useHistorialUsuario } from '@/hooks/useHistorialUsuario';
 import { ObjetivoComposicion } from '@/types/dataset';
+import { hapticaExito } from '@/utils/haptica';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -18,7 +20,7 @@ const META_VASOS = 8;
 const META_PASOS = 8000;
 
 const NOMBRE_OBJETIVO: Record<ObjetivoComposicion, string> = {
-  perdida_grasa: 'Perdida de grasa',
+  perdida_grasa: 'Pérdida de grasa',
   ganancia_muscular: 'Ganancia muscular',
   mantenimiento: 'Mantenimiento',
 };
@@ -32,9 +34,6 @@ export default function Progreso() {
   const resumen = useMemo(() => calcularResumenProgreso(perfilActual, registros), [perfilActual.idUsuario, perfilActual.pesoInicialKg, registros]);
 
   const pesajes = registros.filter((registro) => registro.pesoKg > 0).slice(-DIAS_GRAFICO);
-  const pesos = pesajes.map((registro) => registro.pesoKg);
-  const pesoMinimo = (pesos.length > 0 ? Math.min(...pesos) : perfilActual.pesoInicialKg) - 0.2;
-  const pesoMaximo = (pesos.length > 0 ? Math.max(...pesos) : perfilActual.pesoInicialKg) + 0.2;
 
   // Habitos de los ultimos 7 dias con registro.
   const recientes = registros.slice(-DIAS_GRAFICO);
@@ -46,7 +45,7 @@ export default function Progreso() {
   async function registrarPeso() {
     const valor = Number(pesoHoy.replace(',', '.'));
     if (!Number.isFinite(valor) || valor < 30 || valor > 300) {
-      setMensajePeso('Ingresa un peso valido entre 30 y 300 kg.');
+      setMensajePeso('Ingresa un peso válido entre 30 y 300 kg.');
       return;
     }
     setGuardandoPeso(true);
@@ -54,9 +53,10 @@ export default function Progreso() {
       await guardarRegistroDia(perfilActual.idUsuario, { pesoKg: valor }, fechaLocal());
       setPesoHoy('');
       setMensajePeso('Peso de hoy guardado.');
+      hapticaExito();
       await recargar();
     } catch {
-      setMensajePeso('No se pudo guardar el peso. Revisa tu conexion.');
+      setMensajePeso('No se pudo guardar el peso. Revisa tu conexión.');
     } finally {
       setGuardandoPeso(false);
     }
@@ -87,27 +87,29 @@ export default function Progreso() {
         </Tarjeta>
 
         <Tarjeta estilo={styles.graficoCard}>
-          <View style={styles.tituloFila}><View><Text style={styles.cardTitulo}>Tendencia de seguimiento</Text><Text style={styles.cardSubtitulo}>{cargando ? 'Cargando...' : `Ultimos ${DIAS_GRAFICO} registros`}</Text></View><Ionicons name="analytics-outline" size={24} color={Colors.primary} /></View>
-          <View style={styles.segmentos}><Segmento titulo="Peso" activo={vista === 'peso'} onPress={() => setVista('peso')} /><Segmento titulo="Habitos" activo={vista === 'habitos'} onPress={() => setVista('habitos')} /></View>
+          <View style={styles.tituloFila}><View><Text style={styles.cardTitulo}>Tendencia de seguimiento</Text><Text style={styles.cardSubtitulo}>{cargando ? 'Cargando...' : `Últimos ${DIAS_GRAFICO} registros`}</Text></View><Ionicons name="analytics-outline" size={24} color={Colors.primary} /></View>
+          <View style={styles.segmentos}><Segmento titulo="Peso" activo={vista === 'peso'} onPress={() => setVista('peso')} /><Segmento titulo="Hábitos" activo={vista === 'habitos'} onPress={() => setVista('habitos')} /></View>
           {vista === 'peso' ? (
             pesajes.length === 0 ? (
-              <Text style={styles.vacio}>Aun no registras tu peso. Hazlo arriba para ver tu tendencia.</Text>
+              <Text style={styles.vacio}>Aún no registras tu peso. Hazlo arriba para ver tu tendencia.</Text>
             ) : (
-              <View style={styles.grafico}>{pesajes.map((registro) => { const altura = ((registro.pesoKg - pesoMinimo) / (pesoMaximo - pesoMinimo)) * 86 + 18; return <View key={registro.idRegistro} style={styles.puntoColumna}><View style={[styles.punto, { marginTop: 120 - altura }]} /><View style={styles.lineaBase} /><Text style={styles.etiquetaGrafico}>{registro.fecha.slice(8)}/{registro.fecha.slice(5, 7)}</Text><Text style={styles.valorGrafico}>{registro.pesoKg}</Text></View>; })}</View>
+              <View style={styles.graficoContenedor}>
+                <GraficoLinea unidad="kg" puntos={pesajes.map((registro) => ({ etiqueta: `${registro.fecha.slice(8)}/${registro.fecha.slice(5, 7)}`, valor: registro.pesoKg }))} />
+              </View>
             )
           ) : recientes.length === 0 ? (
-            <Text style={styles.vacio}>Registra comidas e hidratacion en Nutricion para ver tus habitos.</Text>
+            <Text style={styles.vacio}>Registra comidas e hidratación en Nutrición para ver tus hábitos.</Text>
           ) : (
             <View style={styles.habitos}>
-              <Habito icono="water-outline" titulo="Hidratacion (promedio)" valor={`${vasosPromedio.toFixed(1)} / ${META_VASOS} vasos`} porcentaje={Math.min(100, (vasosPromedio / META_VASOS) * 100)} color={Colors.info} />
+              <Habito icono="water-outline" titulo="Hidratación (promedio)" valor={`${vasosPromedio.toFixed(1)} / ${META_VASOS} vasos`} porcentaje={Math.min(100, (vasosPromedio / META_VASOS) * 100)} color={Colors.info} />
               <Habito icono="walk-outline" titulo="Actividad (promedio)" valor={pasosPromedio > 0 ? `${Math.round(pasosPromedio).toLocaleString('es-BO')} pasos` : 'Disponible con Google Fit'} porcentaje={Math.min(100, (pasosPromedio / META_PASOS) * 100)} color={Colors.primary} />
-              <Habito icono="restaurant-outline" titulo="Meta calorica cumplida" valor={`${diasCumplidos} de ${recientes.length} dias`} porcentaje={(diasCumplidos / recientes.length) * 100} color={Colors.success} />
+              <Habito icono="restaurant-outline" titulo="Meta calórica cumplida" valor={`${diasCumplidos} de ${recientes.length} días`} porcentaje={(diasCumplidos / recientes.length) * 100} color={Colors.success} />
             </View>
           )}
         </Tarjeta>
         <Text style={styles.seccion}>Resumen del periodo</Text>
-        <Tarjeta estilo={styles.resumenCard}><ResumenFila etiqueta="Dias registrados" valor={`${resumen.diasRegistrados} dias`} /><ResumenFila etiqueta="Promedio calorico" valor={`${resumen.caloriasPromedio} kcal`} /><ResumenFila etiqueta="Objetivo actual" valor={NOMBRE_OBJETIVO[perfilActual.objetivo]} /><ResumenFila etiqueta="Lectura" valor={resumen.diasRegistrados === 0 ? 'Sin datos aun' : resumen.adherenciaPorcentaje >= 70 ? 'Tendencia favorable' : 'Revisa tu plan'} ultimo /></Tarjeta>
-        <View style={styles.insight}><Ionicons name="sparkles-outline" size={20} color={Colors.primary} /><Text style={styles.insightTexto}>Tu adherencia es el indicador mas importante. Un dia cuenta como cumplido cuando tus calorias quedan dentro de ±10 % de tu meta.</Text></View>
+        <Tarjeta estilo={styles.resumenCard}><ResumenFila etiqueta="Días registrados" valor={`${resumen.diasRegistrados} días`} /><ResumenFila etiqueta="Promedio calórico" valor={`${resumen.caloriasPromedio} kcal`} /><ResumenFila etiqueta="Objetivo actual" valor={NOMBRE_OBJETIVO[perfilActual.objetivo]} /><ResumenFila etiqueta="Lectura" valor={resumen.diasRegistrados === 0 ? 'Sin datos aún' : resumen.adherenciaPorcentaje >= 70 ? 'Tendencia favorable' : 'Revisa tu plan'} ultimo /></Tarjeta>
+        <View style={styles.insight}><Ionicons name="sparkles-outline" size={20} color={Colors.primary} /><Text style={styles.insightTexto}>Tu adherencia es el indicador más importante. Un día cuenta como cumplido cuando tus calorias quedan dentro de ±10 % de tu meta.</Text></View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,12 +158,7 @@ const styles = StyleSheet.create({
   segmentoActivo: { backgroundColor: Colors.surface },
   segmentoTexto: { ...Typography.caption, color: Colors.textSecondary },
   segmentoTextoActivo: { color: Colors.primary },
-  grafico: { height: 170, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start', paddingTop: Spacing.lg },
-  puntoColumna: { alignItems: 'center', width: 70 },
-  punto: { width: 14, height: 14, borderRadius: 7, backgroundColor: Colors.primary, borderWidth: 3, borderColor: Colors.primaryLight },
-  lineaBase: { height: 100, width: 2, backgroundColor: Colors.primaryLight, marginTop: -7 },
-  etiquetaGrafico: { ...Typography.caption, color: Colors.textMuted, marginTop: Spacing.sm },
-  valorGrafico: { ...Typography.caption, color: Colors.textPrimary, marginTop: 2 },
+  graficoContenedor: { marginTop: Spacing.lg },
   habitos: { marginTop: Spacing.lg, gap: Spacing.lg },
   habito: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   habitoInfo: { flex: 1 },

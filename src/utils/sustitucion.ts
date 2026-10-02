@@ -62,14 +62,14 @@ const GRUPOS_ALTERNATIVOS: Record<string, string[]> = {
 const FACTOR_PORCION_MAXIMA = 3;
 
 const CONSEJO_POR_CATEGORIA: Record<string, string> = {
-  Proteinas: 'Mantener la proteina de la comida ayuda a conservar masa muscular y prolonga la saciedad.',
-  Legumbres: 'Las legumbres combinan proteina vegetal y fibra; son una base economica del plato.',
-  Cereales: 'Los cereales aportan la energia principal del dia; conviene repartirlos en las comidas.',
-  Tuberculos: 'Papa, yuca, camote y platano son fuentes de almidon intercambiables si se respeta la porcion.',
-  Lacteos: 'Los lacteos aportan proteina y calcio; elige porciones moderadas si son altos en grasa.',
+  Proteinas: 'Mantener la proteína de la comida ayuda a conservar masa muscular y prolonga la saciedad.',
+  Legumbres: 'Las legumbres combinan proteína vegetal y fibra; son una base económica del plato.',
+  Cereales: 'Los cereales aportan la energía principal del día; conviene repartirlos en las comidas.',
+  Tuberculos: 'Papa, yuca, camote y plátano son fuentes de almidón intercambiables si se respeta la porción.',
+  Lacteos: 'Los lácteos aportan proteína y calcio; elige porciones moderadas si son altos en grasa.',
   Frutas: 'Las frutas aportan fibra, vitaminas y azucares naturales; varia los colores durante la semana.',
   Verduras: 'Las verduras aportan pocas calorias y mucho volumen; puedes aumentarlas con libertad.',
-  'Frutos secos': 'Los frutos secos son muy energeticos: unos pocos gramos cubren la porcion.',
+  'Frutos secos': 'Los frutos secos son muy energéticos: unos pocos gramos cubren la porción.',
   Grasas: 'Las grasas son necesarias, pero 1 cucharadita ya aporta unas 40 kcal.',
 };
 
@@ -143,7 +143,7 @@ export function buscarSustituto(
     mismoGrupo
       ? `Ambos pertenecen al grupo ${alimentoOriginal.categoria.toLowerCase()}.`
       : `No quedaba otro alimento del grupo ${alimentoOriginal.categoria.toLowerCase()}; usamos uno del grupo ${mejor.alimento.categoria.toLowerCase()}, que cumple una funcion parecida en el plato.`,
-    `Energia: ${aporteOriginal.calorias} → ${aporteNuevo.calorias} kcal. Proteina: ${aporteOriginal.proteinasG} → ${aporteNuevo.proteinasG} g.`,
+    `Energía: ${aporteOriginal.calorias} → ${aporteNuevo.calorias} kcal. Proteína: ${aporteOriginal.proteinasG} → ${aporteNuevo.proteinasG} g.`,
     CONSEJO_POR_CATEGORIA[mejor.alimento.categoria] ?? '',
   ].filter(Boolean).join(' ');
 

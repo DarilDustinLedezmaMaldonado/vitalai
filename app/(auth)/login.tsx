@@ -38,7 +38,7 @@ export default function Login() {
   async function manejarRecuperacion() {
     setAviso(null);
     if (!correo.trim()) {
-      setError('Escribe tu correo arriba y vuelve a tocar "Olvidaste tu contrasena".');
+      setError('Escribe tu correo arriba y vuelve a tocar "Olvidaste tu contraseña".');
       return;
     }
     setError(null);
@@ -62,7 +62,7 @@ export default function Login() {
         await refrescar();
         router.replace('/(tabs)');
       } else {
-        setError(resultado.mensaje ?? 'No se pudo iniciar sesion.');
+        setError(resultado.mensaje ?? 'No se pudo iniciar sesión.');
       }
     } catch {
       setError('No se pudo conectar con el servicio. Intenta nuevamente.');
@@ -101,7 +101,7 @@ export default function Login() {
 
           <View style={styles.formulario}>
             <CampoTexto
-              etiqueta="Correo electronico"
+              etiqueta="Correo electrónico"
               icono="mail-outline"
               placeholder="tucorreo@ejemplo.com"
               keyboardType="email-address"
@@ -110,23 +110,23 @@ export default function Login() {
               onChangeText={setCorreo}
             />
             <CampoTexto
-              etiqueta="Contrasena"
+              etiqueta="Contraseña"
               icono="lock-closed-outline"
-              placeholder="Tu contrasena"
+              placeholder="Tu contraseña"
               esPassword
               value={password}
               onChangeText={setPassword}
             />
 
             <TouchableOpacity onPress={manejarRecuperacion} style={styles.olvido}>
-              <Text style={styles.olvidoTexto}>Olvidaste tu contrasena?</Text>
+              <Text style={styles.olvidoTexto}>¿Olvidaste tu contraseña?</Text>
             </TouchableOpacity>
 
             {error && <Text style={styles.error}>{error}</Text>}
             {aviso && <Text style={styles.aviso}>{aviso}</Text>}
 
             <Boton
-              titulo="Iniciar sesion"
+              titulo="Iniciar sesión"
               onPress={manejarLogin}
               cargando={cargando}
               estilo={{ marginTop: Spacing.sm }}
@@ -134,7 +134,7 @@ export default function Login() {
           </View>
 
           <View style={styles.pie}>
-            <Text style={styles.pieTexto}>No tienes cuenta? </Text>
+            <Text style={styles.pieTexto}>¿No tienes cuenta? </Text>
             <TouchableOpacity
               onPress={() => router.replace('/(auth)/registro')}
             >

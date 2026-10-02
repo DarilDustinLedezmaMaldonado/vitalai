@@ -36,7 +36,7 @@ export function useDatoPersistente<T>(
       setError(null);
     } catch (e) {
       console.warn('[VitalAI] Error al guardar', e);
-      setError('No se pudo guardar. Revisa tu conexion.');
+      setError('No se pudo guardar. Revisa tu conexión.');
     }
   }, []);
 

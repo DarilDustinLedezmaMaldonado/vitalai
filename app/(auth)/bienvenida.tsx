@@ -36,8 +36,8 @@ export default function Bienvenida() {
           Tu acompanante de salud{'\n'}inteligente
         </Text>
         <Text style={styles.subtitulo}>
-          Construye habitos sostenibles con un asistente que aprende de ti
-          y te motiva cada dia.
+          Construye hábitos sostenibles con un asistente que aprende de ti
+          y te motiva cada día.
         </Text>
 
         <View style={styles.lista}>

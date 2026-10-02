@@ -15,21 +15,29 @@ export const Spacing = {
   xxxl: 48,
 };
 
+/**
+ * Radios estilo Material 3 (formas redondeadas y amables). Para elementos
+ * anidados: radio interior = radio exterior - padding (radios concentricos).
+ */
 export const Radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 16,
+  lg: 24,
+  xl: 28,
   pill: 999,
 };
 
+/**
+ * Material 3 usa superficies casi planas: la profundidad viene del color
+ * tonal, no de sombras grandes. `card` es apenas un realce.
+ */
 export const Shadow = {
   card: {
     shadowColor: '#2B2118',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   floating: {
     shadowColor: '#2B2118',
@@ -41,9 +49,9 @@ export const Shadow = {
 };
 
 export const Layout = {
-  screenPadding: Spacing.xl,
+  screenPadding: 20,
   inputHeight: 52,
-  buttonHeight: 54,
+  buttonHeight: 52,
 };
 
 export default { Spacing, Radius, Shadow, Layout };

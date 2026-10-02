@@ -56,12 +56,12 @@ export function definirHerramientas(contexto: ContextoAsistente): DefinicionHerr
   return [
     {
       name: 'registrar_alimento',
-      description: 'Registra un alimento que el usuario comio hoy. Llamala una vez por cada alimento. Solo alimentos del catalogo.',
+      description: 'Registra un alimento que el usuario comió hoy. Llámala una vez por cada alimento. Solo alimentos del catálogo.',
       parameters: {
         type: 'object',
         properties: {
-          alimento_id: { type: 'string', enum: alimentosUSDA.map((a) => a.id), description: 'Id del alimento en el catalogo.' },
-          gramos: { type: 'number', description: 'Cantidad en gramos. Convierte unidades (1 huevo, 1 taza) con las porciones del catalogo.' },
+          alimento_id: { type: 'string', enum: alimentosUSDA.map((a) => a.id), description: 'Id del alimento en el catálogo.' },
+          gramos: { type: 'number', description: 'Cantidad en gramos. Convierte unidades (1 huevo, 1 taza) con las porciones del catálogo.' },
           comida: { type: 'string', enum: idsComida, description: 'Comida del plan a la que pertenece. Si el usuario no lo dice, usa la hora.' },
         },
         required: ['alimento_id', 'gramos', 'comida'],
@@ -69,7 +69,7 @@ export function definirHerramientas(contexto: ContextoAsistente): DefinicionHerr
     },
     {
       name: 'marcar_comida_del_plan',
-      description: 'Marca como comida una comida completa del plan del usuario (cuando dice que comio lo del plan).',
+      description: 'Marca como comida una comida completa del plan del usuario (cuando dice que comió lo del plan).',
       parameters: {
         type: 'object',
         properties: { comida: { type: 'string', enum: idsComida, description: 'Comida del plan.' } },
@@ -78,7 +78,7 @@ export function definirHerramientas(contexto: ContextoAsistente): DefinicionHerr
     },
     {
       name: 'registrar_agua',
-      description: 'Suma vasos de agua (250 ml cada uno) al dia. La meta es 8 vasos.',
+      description: 'Suma vasos de agua (250 ml cada uno) al día. La meta es 8 vasos.',
       parameters: {
         type: 'object',
         properties: { vasos: { type: 'integer', description: 'Vasos a sumar (negativo para corregir).' } },
@@ -96,7 +96,7 @@ export function definirHerramientas(contexto: ContextoAsistente): DefinicionHerr
     },
     {
       name: 'deshacer_ultimo_alimento',
-      description: 'Quita el ultimo alimento registrado hoy (si el usuario dice que hubo un error).',
+      description: 'Quita el último alimento registrado hoy (si el usuario dice que hubo un error).',
     },
     {
       name: 'estado_del_dia',
@@ -108,7 +108,7 @@ export function definirHerramientas(contexto: ContextoAsistente): DefinicionHerr
     },
     {
       name: 'resumen_progreso',
-      description: 'Devuelve peso actual, cambio de peso, adherencia y dias registrados del usuario.',
+      description: 'Devuelve peso actual, cambio de peso, adherencia y días registrados del usuario.',
     },
   ];
 }
@@ -249,6 +249,6 @@ export async function ejecutarHerramienta(
         return { resultado: { ok: false, motivo: `Herramienta desconocida: ${nombre}` } };
     }
   } catch (e) {
-    return { resultado: { ok: false, motivo: e instanceof Error ? e.message : 'Error al ejecutar la accion' } };
+    return { resultado: { ok: false, motivo: e instanceof Error ? e.message : 'Error al ejecutar la acción' } };
   }
 }

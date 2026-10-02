@@ -1,19 +1,19 @@
 /**
  * VitalAI - Componente Boton
- * Boton reutilizable con variantes de estilo y estado de carga.
+ *
+ * Botones con las variantes de Material 3, en forma de pildora:
+ * - primary: lleno (accion principal de la pantalla);
+ * - secondary: tonal (accion secundaria);
+ * - ghost: de texto (accion de menor peso).
+ * Se encoge levemente al presionar (ver Presionable).
  */
 
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, ViewStyle } from 'react-native';
+import Presionable from './Presionable';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
-import { Radius, Layout } from '@/constants/Layout';
+import { Layout, Radius, Spacing } from '@/constants/Layout';
 
 type Variante = 'primary' | 'secondary' | 'ghost';
 
@@ -26,6 +26,12 @@ interface BotonProps {
   estilo?: ViewStyle;
 }
 
+const COLOR_TEXTO: Record<Variante, string> = {
+  primary: Colors.textOnPrimary,
+  secondary: Colors.onPrimaryContainer,
+  ghost: Colors.primaryDark,
+};
+
 export default function Boton({
   titulo,
   onPress,
@@ -36,59 +42,39 @@ export default function Boton({
 }: BotonProps) {
   const inactivo = deshabilitado || cargando;
 
-  const estilosContenedor = [
-    styles.base,
-    variante === 'primary' && styles.primary,
-    variante === 'secondary' && styles.secondary,
-    variante === 'ghost' && styles.ghost,
-    inactivo && styles.inactivo,
-    estilo,
-  ];
-
-  const colorTexto =
-    variante === 'primary'
-      ? Colors.textOnPrimary
-      : variante === 'secondary'
-        ? Colors.primary
-        : Colors.textSecondary;
-
   return (
-    <TouchableOpacity
-      style={estilosContenedor}
+    <Presionable
+      style={[styles.base, styles[variante], estilo]}
       onPress={onPress}
       disabled={inactivo}
-      activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: inactivo, busy: cargando }}
     >
       {cargando ? (
-        <ActivityIndicator color={colorTexto} />
+        <ActivityIndicator color={COLOR_TEXTO[variante]} />
       ) : (
-        <Text style={[styles.texto, { color: colorTexto }]}>{titulo}</Text>
+        <Text style={[styles.texto, { color: COLOR_TEXTO[variante] }]}>{titulo}</Text>
       )}
-    </TouchableOpacity>
+    </Presionable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
     height: Layout.buttonHeight,
-    borderRadius: Radius.md,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: Spacing.xl,
   },
   primary: {
     backgroundColor: Colors.primary,
   },
   secondary: {
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
+    backgroundColor: Colors.primaryContainer,
   },
   ghost: {
     backgroundColor: 'transparent',
-  },
-  inactivo: {
-    opacity: 0.5,
   },
   texto: {
     ...Typography.button,

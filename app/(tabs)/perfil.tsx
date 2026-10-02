@@ -21,7 +21,7 @@ import { NivelActividad, ObjetivoComposicion, PerfilUsuario, Sexo } from '@/type
 
 /** Opciones del menu de perfil (en su mayoria pendientes). */
 const OPCIONES = [
-  { icono: 'person-outline', texto: 'Datos biometricos', disponible: false },
+  { icono: 'person-outline', texto: 'Datos biométricos', disponible: false },
   { icono: 'flag-outline', texto: 'Mi objetivo', disponible: false },
   { icono: 'notifications-outline', texto: 'Notificaciones', disponible: false },
   { icono: 'shield-checkmark-outline', texto: 'Privacidad', disponible: false },
@@ -65,7 +65,7 @@ export default function Perfil() {
     }
     const grasaNumero = grasa.trim() ? Number(grasa.replace(',', '.')) : null;
     if (grasaNumero !== null && (!Number.isFinite(grasaNumero) || grasaNumero < 3 || grasaNumero > 60)) {
-      setMensaje('El porcentaje de grasa debe estar entre 3 y 60 %, o dejarse vacio.');
+      setMensaje('El porcentaje de grasa debe estar entre 3 y 60 %, o dejarse vacío.');
       return;
     }
     const perfilActualizado: PerfilUsuario = { ...perfilBase, nombre: nombre.trim(), edad: edadNumero, alturaCm: alturaNumero, pesoInicialKg: pesoNumero, porcentajeGrasaInicial: grasaNumero, sexo, nivelActividad: actividad, objetivo };
@@ -134,12 +134,12 @@ export default function Perfil() {
             <CampoTexto etiqueta="Peso inicial (kg)" icono="scale-outline" keyboardType="decimal-pad" value={peso} onChangeText={setPeso} contenedorStyle={styles.campoMitad} />
             <CampoTexto etiqueta="% grasa (opcional)" icono="body-outline" keyboardType="decimal-pad" value={grasa} onChangeText={setGrasa} contenedorStyle={styles.campoMitad} />
           </View>
-          <Text style={styles.etiqueta}>Sexo biologico</Text>
+          <Text style={styles.etiqueta}>Sexo biológico</Text>
           <Selector opciones={[['femenino', 'Mujer'], ['masculino', 'Hombre']]} valor={sexo} onChange={(valor) => setSexo(valor as Sexo)} />
-          <Text style={styles.etiqueta}>Actividad fisica</Text>
+          <Text style={styles.etiqueta}>Actividad física</Text>
           <Selector opciones={[['sedentario', 'Sedentario'], ['ligero', 'Ligero'], ['moderado', 'Moderado'], ['activo', 'Activo'], ['muy_activo', 'Muy activo']]} valor={actividad} onChange={(valor) => setActividad(valor as NivelActividad)} />
           <Text style={styles.etiqueta}>Objetivo</Text>
-          <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar musculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
+          <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar músculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
           <View style={styles.caloriasCard}><Ionicons name="flame-outline" size={22} color={Colors.primary} /><Text style={styles.caloriasTexto}>Meta estimada{`\n`}<Text style={styles.caloriasNumero}>{caloriasEstimadas || '--'} kcal/dia</Text></Text></View>
           {mensaje ? <Text style={styles.mensaje}>{mensaje}</Text> : null}
           <Boton titulo="Guardar cambios" onPress={guardarPerfil} cargando={guardando} />
@@ -153,12 +153,12 @@ export default function Perfil() {
               <Ionicons name={op.icono} size={20} color={Colors.primary} />
             </View>
             <Text style={styles.opcionTexto}>{op.texto}</Text>
-            <Text style={styles.opcionEstado}>Proximamente</Text>
+            <Text style={styles.opcionEstado}>Próximamente</Text>
           </View>
         ))}
 
         <Boton
-          titulo="Cerrar sesion"
+          titulo="Cerrar sesión"
           variante="secondary"
           onPress={manejarSalida}
           cargando={cerrando}

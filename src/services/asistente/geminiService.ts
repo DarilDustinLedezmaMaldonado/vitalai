@@ -46,7 +46,7 @@ export interface RespuestaAsistente {
 }
 
 export function crearSesion(contexto: ContextoAsistente): SesionAsistente {
-  if (!app) throw new Error('Firebase no esta configurado');
+  if (!app) throw new Error('Firebase no está configurado');
   const ai = getAI(app, { backend: new GoogleAIBackend() });
   const modelo = getGenerativeModel(ai, {
     model: Constants.expoConfig?.extra?.geminiModelo ?? MODELO_POR_DEFECTO,
@@ -91,13 +91,13 @@ export async function enviarMensaje(
 export function mensajeDeError(error: unknown): string {
   const texto = error instanceof Error ? `${(error as { code?: string }).code ?? ''} ${error.message}` : String(error);
   if (/429|RESOURCE_EXHAUSTED|quota/i.test(texto)) {
-    return 'Alcance el limite de consultas gratuitas por ahora. Intenta en un minuto; mientras tanto puedes registrar desde Nutricion.';
+    return 'Alcancé el límite de consultas gratuitas por ahora. Intenta en un minuto; mientras tanto puedes registrar desde Nutrición.';
   }
   if (/api-not-enabled|PERMISSION_DENIED|403/i.test(texto)) {
-    return 'El asistente aun no esta activado en Firebase (AI Logic). Revisa la configuracion del proyecto.';
+    return 'El asistente aún no está activado en Firebase (AI Logic). Revisa la configuración del proyecto.';
   }
   if (/fetch|network|Network/i.test(texto)) {
-    return 'No tengo conexion a internet. Revisa tu red e intenta de nuevo.';
+    return 'No tengo conexión a internet. Revisa tu red e intenta de nuevo.';
   }
   return 'Tuve un problema para responder. Intenta de nuevo en un momento.';
 }

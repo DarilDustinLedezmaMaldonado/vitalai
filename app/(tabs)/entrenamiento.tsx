@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
+import { hapticaExito, hapticaSeleccion } from '@/utils/haptica';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -40,8 +41,8 @@ interface Rutina {
 interface PlanPersonalizado extends Rutina {}
 
 const RUTINAS: Rutina[] = [
-  { id: 'lunes', dia: 'Lunes', foco: 'Fuerza de tren inferior', nivel: 'Inicial', objetivo: 'Fuerza', duracion: 35, icono: 'body-outline', ejercicios: [{ id: 'sentadilla', nombre: 'Sentadilla', series: 3, repeticiones: '12 repeticiones', descanso: 60 }, { id: 'puente', nombre: 'Puente de gluteo', series: 3, repeticiones: '15 repeticiones', descanso: 45 }, { id: 'zancadas', nombre: 'Zancadas', series: 3, repeticiones: '10 por pierna', descanso: 60 }] },
-  { id: 'miercoles', dia: 'Miercoles', foco: 'Fuerza de tren superior', nivel: 'Inicial', objetivo: 'Fuerza', duracion: 30, icono: 'barbell-outline', ejercicios: [{ id: 'flexiones', nombre: 'Flexiones', series: 3, repeticiones: '8 repeticiones', descanso: 60 }, { id: 'remo', nombre: 'Remo con banda', series: 3, repeticiones: '12 repeticiones', descanso: 45 }, { id: 'plancha', nombre: 'Plancha', series: 3, repeticiones: '30 segundos', descanso: 45 }] },
+  { id: 'lunes', dia: 'Lunes', foco: 'Fuerza de tren inferior', nivel: 'Inicial', objetivo: 'Fuerza', duracion: 35, icono: 'body-outline', ejercicios: [{ id: 'sentadilla', nombre: 'Sentadilla', series: 3, repeticiones: '12 repeticiones', descanso: 60 }, { id: 'puente', nombre: 'Puente de glúteo', series: 3, repeticiones: '15 repeticiones', descanso: 45 }, { id: 'zancadas', nombre: 'Zancadas', series: 3, repeticiones: '10 por pierna', descanso: 60 }] },
+  { id: 'miercoles', dia: 'Miércoles', foco: 'Fuerza de tren superior', nivel: 'Inicial', objetivo: 'Fuerza', duracion: 30, icono: 'barbell-outline', ejercicios: [{ id: 'flexiones', nombre: 'Flexiones', series: 3, repeticiones: '8 repeticiones', descanso: 60 }, { id: 'remo', nombre: 'Remo con banda', series: 3, repeticiones: '12 repeticiones', descanso: 45 }, { id: 'plancha', nombre: 'Plancha', series: 3, repeticiones: '30 segundos', descanso: 45 }] },
   { id: 'viernes', dia: 'Viernes', foco: 'Cardio y movilidad', nivel: 'Inicial', objetivo: 'Cardio', duracion: 28, icono: 'walk-outline', ejercicios: [{ id: 'caminata', nombre: 'Caminata activa', series: 1, repeticiones: '15 minutos', descanso: 30 }, { id: 'cadera', nombre: 'Movilidad de cadera', series: 2, repeticiones: '8 minutos', descanso: 30 }, { id: 'estiramiento', nombre: 'Estiramiento', series: 1, repeticiones: '5 minutos', descanso: 30 }] },
 ];
 
@@ -102,7 +103,7 @@ export default function Entrenamiento() {
   const [repeticionesEjercicio, setRepeticionesEjercicio] = useState('10 repeticiones');
   const [descansoEjercicio, setDescansoEjercicio] = useState('60');
   const [nombrePlan, setNombrePlan] = useState('');
-  const [diaPlan, setDiaPlan] = useState('Sabado');
+  const [diaPlan, setDiaPlan] = useState('Sábado');
   const [objetivoPlan, setObjetivoPlan] = useState<'Fuerza' | 'Cardio' | 'Movilidad'>('Fuerza');
   const [ejerciciosPlan, setEjerciciosPlan] = useState<string[]>([]);
 
@@ -126,11 +127,13 @@ export default function Entrenamiento() {
 
   function alternarRutina(rutina: Rutina) {
     const completada = rutinasCompletadas.includes(rutina.id);
+    if (!completada) hapticaExito();
     setRutinasCompletadas((actuales) => completada ? actuales.filter((id) => id !== rutina.id) : [...actuales, rutina.id]);
     if (!completada) setEjerciciosCompletados((actuales) => [...new Set([...actuales, ...rutina.ejercicios.map((ejercicio) => ejercicio.id)])]);
   }
 
   function alternarEjercicio(id: string) {
+    hapticaSeleccion();
     setEjerciciosCompletados((actuales) => actuales.includes(id) ? actuales.filter((actual) => actual !== id) : [...actuales, id]);
   }
 
@@ -231,7 +234,7 @@ export default function Entrenamiento() {
                   <Text style={styles.inputLabel}>Nombre del plan</Text>
                   <TextInput value={nombrePlan} onChangeText={setNombrePlan} placeholder="Ej. Rutina de espalda" placeholderTextColor={Colors.textMuted} style={styles.modalInput} />
                   <Text style={styles.inputLabel}>Día</Text>
-                  <View style={styles.opcionesFila}>{['Lunes', 'Miercoles', 'Viernes', 'Sabado'].map((dia) => <Pressable key={dia} onPress={() => setDiaPlan(dia)} style={[styles.opcionModal, diaPlan === dia && styles.opcionModalActiva]}><Text style={[styles.opcionModalTexto, diaPlan === dia && styles.opcionModalTextoActivo]}>{dia}</Text></Pressable>)}</View>
+                  <View style={styles.opcionesFila}>{['Lunes', 'Miércoles', 'Viernes', 'Sábado'].map((dia) => <Pressable key={dia} onPress={() => setDiaPlan(dia)} style={[styles.opcionModal, diaPlan === dia && styles.opcionModalActiva]}><Text style={[styles.opcionModalTexto, diaPlan === dia && styles.opcionModalTextoActivo]}>{dia}</Text></Pressable>)}</View>
                   <Text style={styles.inputLabel}>Objetivo</Text>
                   <View style={styles.opcionesFila}>{(['Fuerza', 'Cardio', 'Movilidad'] as const).map((opcion) => <Pressable key={opcion} onPress={() => setObjetivoPlan(opcion)} style={[styles.opcionModal, objetivoPlan === opcion && styles.opcionModalActiva]}><Text style={[styles.opcionModalTexto, objetivoPlan === opcion && styles.opcionModalTextoActivo]}>{opcion}</Text></Pressable>)}</View>
                   <Text style={styles.inputLabel}>Selecciona ejercicios</Text>

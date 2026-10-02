@@ -30,16 +30,16 @@ const CLAVE_USUARIOS_DEMO = '@vitalai_usuarios_demo';
 /** Traduce codigos de error de Firebase a mensajes en espaniol. */
 function traducirError(codigo: string): string {
   const mapa: Record<string, string> = {
-    'auth/email-already-in-use': 'Este correo ya esta registrado.',
-    'auth/invalid-email': 'El formato del correo no es valido.',
-    'auth/weak-password': 'La contrasena debe tener al menos 6 caracteres.',
+    'auth/email-already-in-use': 'Este correo ya está registrado.',
+    'auth/invalid-email': 'El formato del correo no es válido.',
+    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
     'auth/user-not-found': 'No existe una cuenta con este correo.',
-    'auth/wrong-password': 'La contrasena es incorrecta.',
-    'auth/invalid-credential': 'Correo o contrasena incorrectos.',
-    'auth/too-many-requests': 'Demasiados intentos. Intenta mas tarde.',
-    'auth/network-request-failed': 'Sin conexion a internet. Revisa tu red.',
-    'auth/missing-email': 'Ingresa tu correo electronico.',
-    'permission-denied': 'Firestore rechazo la operacion. Revisa las reglas de seguridad.',
+    'auth/wrong-password': 'La contraseña es incorrecta.',
+    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde.',
+    'auth/network-request-failed': 'Sin conexión a internet. Revisa tu red.',
+    'auth/missing-email': 'Ingresa tu correo electrónico.',
+    'permission-denied': 'Firestore rechazó la operación. Revisa las reglas de seguridad.',
   };
   return mapa[codigo] ?? 'Ocurrio un error. Intenta nuevamente.';
 }
@@ -62,7 +62,7 @@ async function leerUsuariosDemo(): Promise<UsuarioDemo[]> {
 async function registroDemo(datos: DatosRegistro): Promise<ResultadoAuth> {
   const usuarios = await leerUsuariosDemo();
   if (usuarios.some((u) => u.correo === datos.correo.toLowerCase())) {
-    return { exito: false, mensaje: 'Este correo ya esta registrado.' };
+    return { exito: false, mensaje: 'Este correo ya está registrado.' };
   }
   const uid = `demo_${Date.now()}`;
   const perfil = datos.perfil ? { ...datos.perfil, idUsuario: uid } : undefined;
@@ -85,7 +85,7 @@ async function loginDemo(cred: CredencialesLogin): Promise<ResultadoAuth> {
   const u = usuarios.find((x) => x.correo === cred.correo.toLowerCase());
   if (!u) return { exito: false, mensaje: 'No existe una cuenta con este correo.' };
   if (u.password !== cred.password) {
-    return { exito: false, mensaje: 'La contrasena es incorrecta.' };
+    return { exito: false, mensaje: 'La contraseña es incorrecta.' };
   }
   await AsyncStorage.setItem(CLAVE_SESION_DEMO, JSON.stringify(u));
   return { exito: true };
@@ -127,7 +127,7 @@ export async function recuperarPassword(correo: string): Promise<ResultadoAuth> 
     await sendPasswordResetEmail(auth, correo.trim());
     return {
       exito: true,
-      mensaje: 'Te enviamos un correo para restablecer tu contrasena. Revisa tambien la carpeta de spam.',
+      mensaje: 'Te enviamos un correo para restablecer tu contraseña. Revisa también la carpeta de spam.',
     };
   } catch (e: any) {
     return { exito: false, mensaje: traducirError(e?.code ?? '') };

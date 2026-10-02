@@ -26,8 +26,8 @@ export async function respuestaLocal(texto: string, contexto: ContextoAsistente)
     const r = resultado as { peso_actual_kg: number; cambio_kg: number; adherencia_porcentaje: number; dias_registrados: number };
     return {
       texto: r.dias_registrados > 0
-        ? `Tu peso actual es ${r.peso_actual_kg} kg (${r.cambio_kg >= 0 ? '+' : ''}${r.cambio_kg} kg) y cumpliste tu meta el ${r.adherencia_porcentaje}% de ${r.dias_registrados} dias registrados.`
-        : 'Aun no tienes dias registrados. Registra tus comidas en Nutricion y tu peso en Progreso.',
+        ? `Tu peso actual es ${r.peso_actual_kg} kg (${r.cambio_kg >= 0 ? '+' : ''}${r.cambio_kg} kg) y cumpliste tu meta el ${r.adherencia_porcentaje}% de ${r.dias_registrados} días registrados.`
+        : 'Aún no tienes días registrados. Registra tus comidas en Nutrición y tu peso en Progreso.',
       acciones: [],
     };
   }
@@ -39,10 +39,10 @@ export async function respuestaLocal(texto: string, contexto: ContextoAsistente)
     return { texto: `Hoy llevas ${r.agua_vasos} de 8 vasos de agua.${r.agua_vasos < 8 ? ` Te faltan ${8 - r.agua_vasos}.` : ' ¡Meta cumplida!'}`, acciones: [] };
   }
   if (/prote/.test(t)) {
-    return { texto: `Llevas ${Math.round(r.proteina.consumido_g)} de ${r.proteina.meta_g} g de proteina. Huevo, pollo, tarwi, queso fresco o lentejas te ayudan a completarla.`, acciones: [] };
+    return { texto: `Llevas ${Math.round(r.proteina.consumido_g)} de ${r.proteina.meta_g} g de proteína. Huevo, pollo, tarwi, queso fresco o lentejas te ayudan a completarla.`, acciones: [] };
   }
   return {
-    texto: `Tu meta de hoy es ${r.meta_kcal} kcal; llevas ${r.consumido_kcal} y te quedan ${Math.max(0, r.restante_kcal)}. (Sin conexion con la IA solo puedo responder consultas basicas.)`,
+    texto: `Tu meta de hoy es ${r.meta_kcal} kcal; llevas ${r.consumido_kcal} y te quedan ${Math.max(0, r.restante_kcal)}. (Sin conexión con la IA solo puedo responder consultas básicas.)`,
     acciones: [],
   };
 }
