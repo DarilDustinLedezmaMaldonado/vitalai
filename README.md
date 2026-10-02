@@ -179,6 +179,13 @@ registrar alimento, marcar comida, agua, peso, deshacer, estado del dia, plan de
 resto del dia y resumen de progreso. Gemini solo interpreta y conversa; las
 calorias salen siempre del catalogo y del motor nutricional.
 
+**Consumo de cuota:** la capa gratuita permite muy pocas consultas diarias por
+modelo (20 para gemini-3.5-flash, medido el 2026-10-02). Por eso cada mensaje
+gasta una sola consulta: si Gemini pide herramientas, la app redacta la respuesta
+con los resultados (`redaccion.ts`) y los envía junto con el siguiente mensaje.
+Si un modelo se satura o agota su cuota se pasa al siguiente:
+gemini-3.5-flash -> gemini-3.5-flash-lite -> gemini-3.8-flash.
+
 Requisitos en Firebase Console: **AI Logic -> Get started -> Gemini Developer API**
 (capa gratuita, sin tarjeta). El modelo se cambia en `app.json -> extra.geminiModelo`.
 Sin Firebase o sin conexion, el coach responde consultas basicas sin IA.

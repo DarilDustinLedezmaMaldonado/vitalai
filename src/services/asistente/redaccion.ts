@@ -25,6 +25,11 @@ function consejo(): string {
   return CONSEJOS[Math.floor(Math.random() * CONSEJOS.length)];
 }
 
+/** Nombre de alimento en minuscula para usarlo dentro de una frase. */
+function enFrase(texto: string): string {
+  return texto.charAt(0).toLowerCase() + texto.slice(1);
+}
+
 function lista(items: string[]): string {
   if (items.length <= 1) return items.join('');
   return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
@@ -59,7 +64,7 @@ export function redactarRespuesta(llamadas: LlamadaEjecutada[]): string {
 
   const alimentos = exitosas.filter((l) => l.nombre === 'registrar_alimento');
   if (alimentos.length) {
-    const items = alimentos.map((l) => `${l.resultado.registrado} (${l.resultado.calorias} kcal)`);
+    const items = alimentos.map((l) => `${enFrase(String(l.resultado.registrado))} (${l.resultado.calorias} kcal)`);
     const ultimo = alimentos[alimentos.length - 1].resultado;
     const restante = ultimo.restante_kcal;
     frases.push(`Listo, registré ${lista(items)}.`);
@@ -81,10 +86,11 @@ export function redactarRespuesta(llamadas: LlamadaEjecutada[]): string {
         frases.push(`Guardé tu peso de hoy: ${r.peso_kg} kg.`);
         break;
       case 'deshacer_ultimo_alimento':
-        frases.push(`Quité ${r.quitado}. Ahora llevas ${r.total_hoy_kcal} kcal.`);
+        frases.push(`Quité ${enFrase(String(r.quitado))}. Ahora llevas ${r.total_hoy_kcal} kcal.`);
         break;
       case 'estado_del_dia':
-        frases.push(redactarEstado(r));
+        // Si en el mismo mensaje se registro comida, los totales ya se dijeron.
+        if (!alimentos.length) frases.push(redactarEstado(r));
         break;
       case 'plan_resto_del_dia':
         frases.push(redactarPlan(r));

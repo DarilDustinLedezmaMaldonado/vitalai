@@ -140,8 +140,8 @@ export default function Asistente() {
       }
     } catch (e) {
       console.warn('[VitalAI] Error del asistente', e);
-      // La sesion puede quedar en un estado invalido: se crea otra en el proximo mensaje.
-      sesion.current = null;
+      // Un error no modifica el historial de la sesion: se conserva (y con
+      // ella el modelo que funciona) para el proximo mensaje.
       respuesta = { id: `${Date.now()}a`, autor: 'asistente', texto: mensajeDeError(e), error: true };
     } finally {
       setPensando(false);
