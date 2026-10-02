@@ -5,15 +5,14 @@
  * y los indicadores calculados con el historial guardado del usuario.
  */
 
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
 import { useAuth } from '@/context/AuthContext';
 import { useHistorialUsuario } from '@/hooks/useHistorialUsuario';
 import { usePlanRestoDelDia } from '@/hooks/usePlanRestoDelDia';
-import { alimentosUSDA } from '@/data/alimentosUSDA';
 import { useRouter } from 'expo-router';
 import { calcularResumenProgreso } from '@/services/analisisService';
 import { fechaLocal } from '@/services/datosService';
@@ -29,28 +28,8 @@ export default function Inicio() {
   const resumen = calcularResumenProgreso(perfilActual, registros);
   const registroHoy = registros.find((registro) => registro.fecha === fechaLocal());
   const requerimiento = calcularRequerimiento(perfilActual);
-  const [entradaAsistente, setEntradaAsistente] = useState('');
-  const [mensajesAsistente, setMensajesAsistente] = useState([
-    { id: 'saludo', autor: 'asistente', texto: 'Hola. Soy tu asistente de VitalAI. Pregúntame sobre tu meta, alimentación o progreso.' },
-  ]);
   const caloriasRegistradas = registroHoy?.caloriasConsumidas ?? 0;
   const restoDelDia = usePlanRestoDelDia(uid, requerimiento, registroHoy);
-  const vasosAgua = registroHoy?.vasosAgua ?? 0;
-
-  function preguntar(pregunta: string) {
-    const texto = pregunta.toLowerCase();
-    const restantes = requerimiento.caloriasObjetivo - caloriasRegistradas;
-    let respuesta = `Tu meta de hoy es ${requerimiento.caloriasObjetivo} kcal. Te quedan aproximadamente ${restantes} kcal por registrar.`;
-    if (texto.includes('prote') || texto.includes('musculo')) respuesta = `Para tu objetivo, tu referencia diaria es ${requerimiento.proteinasG} g de proteína. Distribúyela entre tus comidas con huevo, pollo, lenteja o quinua.`;
-    if (texto.includes('agua') || texto.includes('hidrat')) respuesta = vasosAgua > 0 ? `Hoy llevas ${vasosAgua} de 8 vasos de agua. ${vasosAgua >= 8 ? '¡Meta cumplida!' : `Te faltan ${8 - vasosAgua}.`}` : `Aún no registras agua hoy. En Nutrición puedes llevar el control de tus 8 vasos diarios.`;
-    if (/(que|qué) (como|ceno|meriendo)|recalcul|resto del d|hambre|me queda/.test(texto)) {
-      const detalle = restoDelDia.comidas.map((c) => `${c.momento} (${c.aporte.calorias} kcal): ${c.alimentos.map((a) => `${alimentosUSDA.find((x) => x.id === a.alimentoId)?.nombre ?? a.alimentoId} ${a.gramos} g`).join(', ')}.`).join(' ');
-      respuesta = `${restoDelDia.mensaje}${detalle ? ` ${detalle}` : ''}`;
-    }
-    if (texto.includes('progreso') || texto.includes('peso')) respuesta = resumen.diasRegistrados > 0 ? `Tu peso actual registrado es ${resumen.pesoActualKg} kg y tu adherencia es ${resumen.adherenciaPorcentaje}% en ${resumen.diasRegistrados} días registrados.` : `Aún no tienes días registrados. Registra tus comidas en Nutrición y tu peso en Progreso.`;
-    setMensajesAsistente((actuales) => [...actuales, { id: `${Date.now()}u`, autor: 'usuario', texto: pregunta }, { id: `${Date.now()}a`, autor: 'asistente', texto: respuesta }].slice(-5));
-    setEntradaAsistente('');
-  }
 
   const saludo = obtenerSaludo();
 
@@ -123,13 +102,26 @@ export default function Inicio() {
           />
         </View>
 
-        <Text style={styles.seccion}>Asistente VitalAI</Text>
-        <Tarjeta estilo={styles.asistenteCard}>
-          <View style={styles.asistenteEncabezado}><View style={styles.asistenteIcono}><Ionicons name="sparkles" size={19} color={Colors.textOnPrimary} /></View><View><Text style={styles.asistenteNombre}>Coach nutricional</Text><Text style={styles.asistenteEstado}>Disponible para ayudarte</Text></View></View>
-          <View style={styles.chat}>{mensajesAsistente.map((mensaje) => <View key={mensaje.id} style={[styles.burbuja, mensaje.autor === 'usuario' ? styles.burbujaUsuario : styles.burbujaAsistente]}><Text style={[styles.burbujaTexto, mensaje.autor === 'usuario' && styles.burbujaTextoUsuario]}>{mensaje.texto}</Text></View>)}</View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.preguntas}>{['¿Qué como ahora?', '¿Cuál es mi meta?', '¿Cómo aumento proteína?', '¿Cómo va mi progreso?'].map((pregunta) => <Pressable key={pregunta} onPress={() => preguntar(pregunta)} style={styles.pregunta}><Text style={styles.preguntaTexto}>{pregunta}</Text></Pressable>)}</ScrollView>
-          <View style={styles.chatEntrada}><TextInput value={entradaAsistente} onChangeText={setEntradaAsistente} onSubmitEditing={() => entradaAsistente.trim() && preguntar(entradaAsistente.trim())} placeholder="Escribe una pregunta..." placeholderTextColor={Colors.textMuted} style={styles.chatInput} /><Pressable onPress={() => entradaAsistente.trim() && preguntar(entradaAsistente.trim())} style={styles.enviarBoton}><Ionicons name="send" size={16} color={Colors.textOnPrimary} /></Pressable></View>
-        </Tarjeta>
+        <Text style={styles.seccion}>Coach VitalAI</Text>
+        <Pressable onPress={() => router.push('/asistente')} accessibilityRole="button" accessibilityLabel="Abrir el coach">
+          <Tarjeta estilo={styles.asistenteCard}>
+            <View style={styles.asistenteEncabezado}>
+              <View style={styles.asistenteIcono}><Ionicons name="sparkles" size={19} color={Colors.textOnPrimary} /></View>
+              <View style={styles.asistenteInfo}>
+                <Text style={styles.asistenteNombre}>Habla con tu coach</Text>
+                <Text style={styles.asistenteEstado}>Cuéntale qué comiste y él lo registra por ti</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+            </View>
+          </Tarjeta>
+        </Pressable>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.preguntas}>
+          {['¿Qué como ahora?', '¿Cómo voy hoy?', '¿Cómo va mi progreso?'].map((pregunta) => (
+            <Pressable key={pregunta} onPress={() => router.push({ pathname: '/asistente', params: { q: pregunta } })} style={styles.pregunta}>
+              <Text style={styles.preguntaTexto}>{pregunta}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         <View style={styles.nota}>
           <Ionicons
@@ -283,20 +275,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   asistenteCard: { borderWidth: 1, borderColor: Colors.primaryLight },
+  asistenteInfo: { flex: 1 },
   asistenteEncabezado: { flexDirection: 'row', alignItems: 'center' },
   asistenteIcono: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: Spacing.sm },
   asistenteNombre: { ...Typography.bodyStrong, color: Colors.textPrimary },
   asistenteEstado: { ...Typography.caption, color: Colors.success, marginTop: 2 },
-  chat: { gap: Spacing.sm, marginTop: Spacing.md },
-  burbuja: { maxWidth: '88%', borderRadius: Radius.md, padding: Spacing.md },
-  burbujaAsistente: { alignSelf: 'flex-start', backgroundColor: Colors.surfaceAlt },
-  burbujaUsuario: { alignSelf: 'flex-end', backgroundColor: Colors.primary },
-  burbujaTexto: { ...Typography.caption, color: Colors.textPrimary },
-  burbujaTextoUsuario: { color: Colors.textOnPrimary },
   preguntas: { gap: Spacing.sm, paddingVertical: Spacing.md },
   pregunta: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   preguntaTexto: { ...Typography.caption, color: Colors.primary },
-  chatEntrada: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, paddingLeft: Spacing.md },
-  chatInput: { flex: 1, height: 40, ...Typography.caption, color: Colors.textPrimary },
-  enviarBoton: { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', marginRight: 3 },
 });

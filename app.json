@@ -48,7 +48,8 @@
       "firebaseStorageBucket": "vitalia-f9ee4.firebasestorage.app",
       "firebaseMessagingSenderId": "195455446882",
       "firebaseAppId": "1:195455446882:web:d3fa980a27321feeef063b",
-      "firebaseMeasurementId": "G-DZYSNFREMH"
+      "firebaseMeasurementId": "G-DZYSNFREMH",
+      "geminiModelo": "gemini-3.8-flash"
     }
   }
 }

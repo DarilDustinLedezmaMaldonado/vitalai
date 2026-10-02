@@ -53,7 +53,7 @@ consumo calórico** en el contexto boliviano.
 | OE3 | Módulo de **nutrición adaptativa con IA** que genere y **recalcule** planes alimenticios según la disponibilidad del usuario | 🟡 | Meta Mifflin-St Jeor + macros, plan de comidas y **recálculo por ingrediente faltante** con justificación educativa (`utils/sustitucion.ts`). Falta un modelo de IA entrenado con el dataset |
 | OE4 | Módulo de **reconocimiento de imágenes** (visión por computadora) para identificar alimentos por foto y calcular calorías | ❌ | `expo-camera` y `expo-image-picker` instalados pero sin uso; falta el modelo (TensorFlow Lite / CNN) |
 | OE5 | Módulo de **planificación de entrenamiento** con control de cargas y visualización del progreso temporal | 🟡 | Rutinas, ejercicios y planes personalizados y temporizador de descanso; falta registrar cargas y peso por sesión y el historial semanal |
-| OE6 | Módulo de **asistencia de voz proactiva** con NLP para motivar y reducir la omisión de registros | ❌ | Solo existe un chat de texto con reglas fijas en Inicio (`preguntar()`); sin voz ni NLP |
+| OE6 | Módulo de **asistencia de voz proactiva** con NLP para motivar y reducir la omisión de registros | 🟡 | Coach conversacional con Gemini (Firebase AI Logic): registra comidas, agua y peso en lenguaje natural y recalcula el día (`services/asistente/`). Falta la voz (fase 2) y los recordatorios proactivos |
 | OE7 | Módulo de **integración pasiva** con ecosistemas de salud externos (actividad física automática) | ❌ | Google Fit no integrado |
 | OE8 | **Interfaz intuitiva** con visión clara del avance hacia los objetivos de composición corporal | ✅ | Tema, navegación por pestañas y pantallas de Inicio y Progreso |
 | OE9 | Módulo de **análisis de datos** y métricas de rendimiento para decisiones de estilo de vida | 🟡 | Inicio y Progreso usan el historial real (peso, adherencia, calorías, hábitos); faltan reportes semanales, predicción y notificaciones |
@@ -105,11 +105,17 @@ consumo calórico** en el contexto boliviano.
 ### 4.4 Módulo de asistente de voz y motivación (perfil §5.4)
 
 - [ ] **Saludos personalizados y recordatorios proactivos** por **síntesis de voz**
-- [ ] **Interacción conversacional** para registrar comidas o pesajes por voz
+- [~] **Interacción conversacional** para registrar comidas o pesajes *(por texto ya
+      funciona con Gemini y herramientas; la voz llega en la fase 2)*
 - [ ] **Retroalimentación positiva** y felicitaciones automáticas al cumplir hitos diarios o semanales
 - [ ] **Alertas de voz** de hidratación y de meta de pasos diarios
 - Tecnología comprometida (§7.1.4 y §7.1.10): **OpenAI Whisper** (transcripción) +
   **Llama 3.2 3B** (interpretación de intenciones), ejecutados **localmente** en el dispositivo
+  - **Cambio de tecnología (2026-10-02):** se reemplaza por Gemini vía Firebase AI Logic
+    (capa gratuita) + reconocimiento y síntesis de voz nativos del celular. Motivos:
+    rendimiento en celulares de gama media, calidad del español y fiabilidad de las
+    acciones. Mitigación de privacidad: consentimiento explícito y envío de datos mínimos.
+    La capa de herramientas es independiente del modelo, por si se vuelve a uno local.
 - Solo en **español** (límite del perfil)
 - El tono debe adaptarse a la etapa de adherencia del usuario (modelo transteórico, §7.1.7)
 

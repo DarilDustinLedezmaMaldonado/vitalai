@@ -22,6 +22,7 @@ export function useDatoPersistente<T>(
   const [valor, setValor] = useState<T>(valorInicial);
   const [cargando, setCargando] = useState(clave !== null);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
   const cambiadoPorUsuario = useRef(false);
   const pendiente = useRef<{ valor: T } | null>(null);
   const cargarRef = useRef(cargar);
@@ -64,7 +65,7 @@ export function useDatoPersistente<T>(
     return () => {
       activo = false;
     };
-  }, [clave]);
+  }, [clave, version]);
 
   useEffect(() => {
     if (!clave || cargando || !cambiadoPorUsuario.current) return;
@@ -89,5 +90,15 @@ export function useDatoPersistente<T>(
     setValor(cambio);
   }, []);
 
-  return { valor, actualizar, cargando, error };
+  /**
+   * Vuelve a leer el valor guardado (por ejemplo, al volver a la pantalla
+   * despues de que otra parte de la app lo modifico). No hace nada si hay
+   * un guardado pendiente, para no perder cambios del usuario.
+   */
+  const recargar = useCallback(() => {
+    if (pendiente.current) return;
+    setVersion((v) => v + 1);
+  }, []);
+
+  return { valor, actualizar, cargando, error, recargar };
 }

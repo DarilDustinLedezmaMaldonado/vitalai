@@ -2,7 +2,8 @@
  * VitalAI - Modulo de nutricion adaptativa.
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +22,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useDatoPersistente } from '@/hooks/useDatoPersistente';
 import { buscarSustituto } from '@/utils/sustitucion';
 import { planificarRestoDelDia } from '@/utils/planificacionDia';
-import { Comida, COMIDAS, IngredientePlan } from '@/data/planBase';
+import { Comida, COMIDAS } from '@/data/planBase';
+import { aplicarAjustes, aporteDeComida, buscarAlimento, comidasHechas, totalesDelDia } from '@/utils/totalesDia';
 import {
   AjusteComida,
   AlimentoRegistrado,
@@ -35,17 +37,6 @@ import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
 
-
-function buscarAlimento(id: string): AlimentoUSDA | undefined {
-  return alimentosUSDA.find((item) => item.id === id);
-}
-
-function aporteDeComida(comida: Comida): AportePorcion {
-  return sumarAportes(comida.alimentos.flatMap((ingrediente) => {
-    const alimento = buscarAlimento(ingrediente.alimentoId);
-    return alimento ? [calcularAportePorcion(alimento, ingrediente.gramos)] : [];
-  }));
-}
 
 function caloriasDeComida(comida: Comida): number {
   return aporteDeComida(comida).calorias;
@@ -74,18 +65,6 @@ interface DiaNutricion {
 
 const DIA_VACIO: DiaNutricion = { alimentos: [], comidasCompletadas: [], vasosAgua: 0, ajustesPlan: [] };
 
-/** Plan del dia: el plan base con las porciones recalculadas para hoy. */
-function aplicarAjustes(plan: Comida[], ajustes: AjusteComida[]): Comida[] {
-  return plan.map((comida) => {
-    const ajuste = ajustes.find((a) => a.comidaId === comida.id);
-    return ajuste ? { ...comida, alimentos: ajuste.alimentos } : comida;
-  });
-}
-
-/** Comidas ya comidas: marcadas o con alimentos registrados en ellas. */
-function comidasHechas(dia: DiaNutricion): string[] {
-  return [...new Set([...dia.comidasCompletadas, ...dia.alimentos.map((a) => a.comida)])];
-}
 const CONFIG_NUTRICION = 'nutricion';
 
 export default function Nutricion() {
@@ -112,7 +91,7 @@ export default function Nutricion() {
       return { alimentos: registro.alimentos, comidasCompletadas: registro.comidasCompletadas, vasosAgua: registro.vasosAgua, ajustesPlan: registro.ajustesPlan ?? [] };
     },
     (datos) => {
-      const totales = totalesDelDia(datos, aplicarAjustes(planComidas, datos.ajustesPlan));
+      const totales = totalesDelDia(datos, planComidas);
       return guardarRegistroDia(uid!, {
         ...datos,
         caloriasConsumidas: totales.calorias,
@@ -140,7 +119,7 @@ export default function Nutricion() {
   const [gramosNuevaComida, setGramosNuevaComida] = useState('100');
   const [ingredientesNuevaComida, setIngredientesNuevaComida] = useState<string[]>([]);
   const planDeHoy = aplicarAjustes(planComidas, dia.valor.ajustesPlan);
-  const consumido = totalesDelDia(dia.valor, planDeHoy);
+  const consumido = totalesDelDia(dia.valor, planComidas);
   const caloriasPlan = planDeHoy.reduce((total, comida) => total + caloriasDeComida(comida), 0);
   const caloriasRegistradas = consumido.calorias;
   const porcentajeCalorias = Math.min(100, Math.round((caloriasRegistradas / requerimiento.caloriasObjetivo) * 100));
@@ -155,6 +134,10 @@ export default function Nutricion() {
   const [comidaAjuste, setComidaAjuste] = useState<string | null>(null);
   const [explicaciones, setExplicaciones] = useState<string[]>([]);
   const errorGuardado = plan.error ?? dia.error ?? disponibilidad.error;
+
+  // Al volver a la pestana se releen los datos: el coach pudo registrar algo.
+  const recargarDia = dia.recargar;
+  useFocusEffect(useCallback(() => { recargarDia(); }, [recargarDia]));
 
   // Plan para el resto del dia: se recalcula desde el plan base con lo ya comido.
   const hechas = comidasHechas(dia.valor);
@@ -588,12 +571,6 @@ export default function Nutricion() {
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-/** Totales del dia: alimentos registrados + comidas del plan marcadas como hechas. */
-function totalesDelDia(dia: DiaNutricion, planComidas: Comida[]): AportePorcion {
-  const comidasHechas = planComidas.filter((comida) => dia.comidasCompletadas.includes(comida.id));
-  return sumarAportes([...dia.alimentos, ...comidasHechas.map(aporteDeComida)]);
 }
 
 function Macro({ etiqueta, valor }: { etiqueta: string; valor: string }) {

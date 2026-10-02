@@ -171,6 +171,18 @@ y reparte el resto entre almidones y grasas. Si la meta ya se alcanzo propone
 opciones ligeras sin sugerir ayunos; si falta mucho y es tarde, limita la porcion.
 El ajuste se guarda solo para ese dia y no modifica el plan base.
 
+### Coach con IA (Gemini)
+
+`app/asistente.tsx` es un chat que entiende lenguaje natural ("desayune 2 huevos
+y una banana") y registra en la app usando herramientas (`src/services/asistente/`):
+registrar alimento, marcar comida, agua, peso, deshacer, estado del dia, plan del
+resto del dia y resumen de progreso. Gemini solo interpreta y conversa; las
+calorias salen siempre del catalogo y del motor nutricional.
+
+Requisitos en Firebase Console: **AI Logic -> Get started -> Gemini Developer API**
+(capa gratuita, sin tarjeta). El modelo se cambia en `app.json -> extra.geminiModelo`.
+Sin Firebase o sin conexion, el coach responde consultas basicas sin IA.
+
 ### Modo demo forzado
 
 Para pruebas o presentaciones sin internet se puede ignorar Firebase:
