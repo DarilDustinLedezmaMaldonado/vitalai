@@ -81,6 +81,9 @@ consumo calórico** en el contexto boliviano.
       *(hoy es una fórmula determinista, no un modelo de IA)*
 - [x] **Recálculo instantáneo** de la dieta ante la falta de un ingrediente
       *(botón ⇄ en cada comida; conserva las calorías y recuerda lo que no tienes)*
+- [x] **Plan para el resto del día**: recalcula las comidas pendientes según lo ya
+      consumido, priorizando proteína y volumen para no pasar hambre
+      (`utils/planificacionDia.ts`); también responde "¿Qué como ahora?" en el asistente
 - [x] **Registro diario** de alimentos con desglose de **proteínas, carbohidratos y grasas**
 - [~] **Catálogo de alimentos y recetas** adaptados al **mercado local boliviano**
       *(28 alimentos, 10 locales: tarwi, habas, amaranto, mote, choclo, yuca, camote,

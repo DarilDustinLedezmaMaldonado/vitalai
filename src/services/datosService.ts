@@ -39,10 +39,22 @@ export interface AlimentoRegistrado {
   comida: string;
 }
 
+/** Porciones de una comida recalculadas para un dia concreto. */
+export interface AjusteComida {
+  comidaId: string;
+  alimentos: { alimentoId: string; gramos: number }[];
+}
+
 /** Documento diario: fila del dataset (Tabla 2) mas el detalle de la app. */
 export interface RegistroDiarioDetalle extends RegistroDiario {
   alimentos: AlimentoRegistrado[];
   comidasCompletadas: string[];
+  /**
+   * Porciones del plan recalculadas solo para este dia. Es una lista (no un
+   * mapa) porque Firestore combina mapas al guardar con merge y no borraria
+   * los ajustes que se quitan; las listas se reemplazan completas.
+   */
+  ajustesPlan: AjusteComida[];
   actualizado: string;
 }
 
@@ -163,6 +175,7 @@ function registroVacio(uid: string, fecha: string): RegistroDiarioDetalle {
     cumplioPlan: false,
     alimentos: [],
     comidasCompletadas: [],
+    ajustesPlan: [],
     actualizado: new Date().toISOString(),
   };
 }

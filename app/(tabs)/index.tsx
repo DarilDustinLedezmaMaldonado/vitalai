@@ -12,6 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
 import { useAuth } from '@/context/AuthContext';
 import { useHistorialUsuario } from '@/hooks/useHistorialUsuario';
+import { usePlanRestoDelDia } from '@/hooks/usePlanRestoDelDia';
+import { alimentosUSDA } from '@/data/alimentosUSDA';
+import { useRouter } from 'expo-router';
 import { calcularResumenProgreso } from '@/services/analisisService';
 import { fechaLocal } from '@/services/datosService';
 import { calcularRequerimiento } from '@/utils/calculoNutricional';
@@ -20,7 +23,8 @@ import { Typography } from '@/constants/Typography';
 import { Spacing, Layout, Radius } from '@/constants/Layout';
 
 export default function Inicio() {
-  const { correo } = useAuth();
+  const { correo, uid } = useAuth();
+  const router = useRouter();
   const { perfilActual, registros } = useHistorialUsuario();
   const resumen = calcularResumenProgreso(perfilActual, registros);
   const registroHoy = registros.find((registro) => registro.fecha === fechaLocal());
@@ -30,6 +34,7 @@ export default function Inicio() {
     { id: 'saludo', autor: 'asistente', texto: 'Hola. Soy tu asistente de VitalAI. Pregúntame sobre tu meta, alimentación o progreso.' },
   ]);
   const caloriasRegistradas = registroHoy?.caloriasConsumidas ?? 0;
+  const restoDelDia = usePlanRestoDelDia(uid, requerimiento, registroHoy);
   const vasosAgua = registroHoy?.vasosAgua ?? 0;
 
   function preguntar(pregunta: string) {
@@ -38,6 +43,10 @@ export default function Inicio() {
     let respuesta = `Tu meta de hoy es ${requerimiento.caloriasObjetivo} kcal. Te quedan aproximadamente ${restantes} kcal por registrar.`;
     if (texto.includes('prote') || texto.includes('musculo')) respuesta = `Para tu objetivo, tu referencia diaria es ${requerimiento.proteinasG} g de proteína. Distribúyela entre tus comidas con huevo, pollo, lenteja o quinua.`;
     if (texto.includes('agua') || texto.includes('hidrat')) respuesta = vasosAgua > 0 ? `Hoy llevas ${vasosAgua} de 8 vasos de agua. ${vasosAgua >= 8 ? '¡Meta cumplida!' : `Te faltan ${8 - vasosAgua}.`}` : `Aún no registras agua hoy. En Nutrición puedes llevar el control de tus 8 vasos diarios.`;
+    if (/(que|qué) (como|ceno|meriendo)|recalcul|resto del d|hambre|me queda/.test(texto)) {
+      const detalle = restoDelDia.comidas.map((c) => `${c.momento} (${c.aporte.calorias} kcal): ${c.alimentos.map((a) => `${alimentosUSDA.find((x) => x.id === a.alimentoId)?.nombre ?? a.alimentoId} ${a.gramos} g`).join(', ')}.`).join(' ');
+      respuesta = `${restoDelDia.mensaje}${detalle ? ` ${detalle}` : ''}`;
+    }
     if (texto.includes('progreso') || texto.includes('peso')) respuesta = resumen.diasRegistrados > 0 ? `Tu peso actual registrado es ${resumen.pesoActualKg} kg y tu adherencia es ${resumen.adherenciaPorcentaje}% en ${resumen.diasRegistrados} días registrados.` : `Aún no tienes días registrados. Registra tus comidas en Nutrición y tu peso en Progreso.`;
     setMensajesAsistente((actuales) => [...actuales, { id: `${Date.now()}u`, autor: 'usuario', texto: pregunta }, { id: `${Date.now()}a`, autor: 'asistente', texto: respuesta }].slice(-5));
     setEntradaAsistente('');
@@ -74,6 +83,19 @@ export default function Inicio() {
           </View>
         </Tarjeta>
 
+        {caloriasRegistradas > 0 && restoDelDia.comidas.length > 0 && (
+          <Pressable onPress={() => router.push('/(tabs)/nutricion')}>
+            <Tarjeta estilo={styles.restoCard}>
+              <Ionicons name="time-outline" size={22} color={Colors.primary} />
+              <View style={styles.restoInfo}>
+                <Text style={styles.restoTitulo}>Resto de tu día: {Math.max(0, restoDelDia.restante.calorias)} kcal</Text>
+                <Text style={styles.restoTexto}>{restoDelDia.comidas.map((c) => `${c.momento} ${c.aporte.calorias} kcal`).join(' · ')} — toca para ver tu plan ajustado</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+            </Tarjeta>
+          </Pressable>
+        )}
+
         <Text style={styles.seccion}>Tu progreso</Text>
 
         <View style={styles.fila}>
@@ -105,7 +127,7 @@ export default function Inicio() {
         <Tarjeta estilo={styles.asistenteCard}>
           <View style={styles.asistenteEncabezado}><View style={styles.asistenteIcono}><Ionicons name="sparkles" size={19} color={Colors.textOnPrimary} /></View><View><Text style={styles.asistenteNombre}>Coach nutricional</Text><Text style={styles.asistenteEstado}>Disponible para ayudarte</Text></View></View>
           <View style={styles.chat}>{mensajesAsistente.map((mensaje) => <View key={mensaje.id} style={[styles.burbuja, mensaje.autor === 'usuario' ? styles.burbujaUsuario : styles.burbujaAsistente]}><Text style={[styles.burbujaTexto, mensaje.autor === 'usuario' && styles.burbujaTextoUsuario]}>{mensaje.texto}</Text></View>)}</View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.preguntas}>{['¿Cuál es mi meta?', '¿Cómo aumento proteína?', '¿Cómo va mi progreso?'].map((pregunta) => <Pressable key={pregunta} onPress={() => preguntar(pregunta)} style={styles.pregunta}><Text style={styles.preguntaTexto}>{pregunta}</Text></Pressable>)}</ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.preguntas}>{['¿Qué como ahora?', '¿Cuál es mi meta?', '¿Cómo aumento proteína?', '¿Cómo va mi progreso?'].map((pregunta) => <Pressable key={pregunta} onPress={() => preguntar(pregunta)} style={styles.pregunta}><Text style={styles.preguntaTexto}>{pregunta}</Text></Pressable>)}</ScrollView>
           <View style={styles.chatEntrada}><TextInput value={entradaAsistente} onChangeText={setEntradaAsistente} onSubmitEditing={() => entradaAsistente.trim() && preguntar(entradaAsistente.trim())} placeholder="Escribe una pregunta..." placeholderTextColor={Colors.textMuted} style={styles.chatInput} /><Pressable onPress={() => entradaAsistente.trim() && preguntar(entradaAsistente.trim())} style={styles.enviarBoton}><Ionicons name="send" size={16} color={Colors.textOnPrimary} /></Pressable></View>
         </Tarjeta>
 
@@ -251,6 +273,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     gap: Spacing.sm,
   },
+  restoCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.md, borderWidth: 1, borderColor: Colors.primaryLight },
+  restoInfo: { flex: 1 },
+  restoTitulo: { ...Typography.bodyStrong, color: Colors.textPrimary },
+  restoTexto: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
   notaTexto: {
     ...Typography.caption,
     color: Colors.info,

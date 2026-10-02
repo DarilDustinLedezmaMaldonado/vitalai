@@ -20,7 +20,10 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { useDatoPersistente } from '@/hooks/useDatoPersistente';
 import { buscarSustituto } from '@/utils/sustitucion';
+import { planificarRestoDelDia } from '@/utils/planificacionDia';
+import { Comida, COMIDAS, IngredientePlan } from '@/data/planBase';
 import {
+  AjusteComida,
   AlimentoRegistrado,
   fechaLocal,
   guardarConfiguracion,
@@ -32,27 +35,6 @@ import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
 
-interface Comida {
-  id: string;
-  momento: string;
-  titulo: string;
-  detalle: string;
-  calorias: number;
-  icono: keyof typeof Ionicons.glyphMap;
-  alimentos: IngredientePlan[];
-}
-
-interface IngredientePlan {
-  alimentoId: string;
-  gramos: number;
-}
-
-const COMIDAS: Comida[] = [
-  { id: 'desayuno', momento: 'Desayuno', titulo: 'Avena, fruta y huevo', detalle: 'Avena, leche, banana y huevo', calorias: 0, icono: 'sunny-outline', alimentos: [{ alimentoId: 'avena-seca', gramos: 40 }, { alimentoId: 'leche-dos-por-ciento', gramos: 200 }, { alimentoId: 'banana-cruda', gramos: 100 }, { alimentoId: 'huevo-crudo', gramos: 50 }] },
-  { id: 'almuerzo', momento: 'Almuerzo', titulo: 'Pollo, quinua y ensalada', detalle: 'Pechuga, quinua, tomate, lechuga y aceite de oliva', calorias: 0, icono: 'restaurant-outline', alimentos: [{ alimentoId: 'pollo-pechuga-cruda', gramos: 150 }, { alimentoId: 'quinua-cocida', gramos: 150 }, { alimentoId: 'tomate-crudo', gramos: 100 }, { alimentoId: 'lechuga-cruda', gramos: 60 }, { alimentoId: 'aceite-oliva', gramos: 5 }] },
-  { id: 'merienda', momento: 'Merienda', titulo: 'Yogur, manzana y almendras', detalle: 'Yogur natural, manzana y almendras', calorias: 0, icono: 'cafe-outline', alimentos: [{ alimentoId: 'yogur-natural', gramos: 170 }, { alimentoId: 'manzana-cruda', gramos: 120 }, { alimentoId: 'almendra-cruda', gramos: 15 }] },
-  { id: 'cena', momento: 'Cena', titulo: 'Trucha, papa y ensalada', detalle: 'Trucha, papa cocida, tomate y lechuga', calorias: 0, icono: 'moon-outline', alimentos: [{ alimentoId: 'trucha-cocida', gramos: 150 }, { alimentoId: 'papa-cocida', gramos: 150 }, { alimentoId: 'tomate-crudo', gramos: 100 }, { alimentoId: 'lechuga-cruda', gramos: 60 }] },
-];
 
 function buscarAlimento(id: string): AlimentoUSDA | undefined {
   return alimentosUSDA.find((item) => item.id === id);
@@ -87,9 +69,23 @@ interface DiaNutricion {
   alimentos: AlimentoRegistrado[];
   comidasCompletadas: string[];
   vasosAgua: number;
+  ajustesPlan: AjusteComida[];
 }
 
-const DIA_VACIO: DiaNutricion = { alimentos: [], comidasCompletadas: [], vasosAgua: 0 };
+const DIA_VACIO: DiaNutricion = { alimentos: [], comidasCompletadas: [], vasosAgua: 0, ajustesPlan: [] };
+
+/** Plan del dia: el plan base con las porciones recalculadas para hoy. */
+function aplicarAjustes(plan: Comida[], ajustes: AjusteComida[]): Comida[] {
+  return plan.map((comida) => {
+    const ajuste = ajustes.find((a) => a.comidaId === comida.id);
+    return ajuste ? { ...comida, alimentos: ajuste.alimentos } : comida;
+  });
+}
+
+/** Comidas ya comidas: marcadas o con alimentos registrados en ellas. */
+function comidasHechas(dia: DiaNutricion): string[] {
+  return [...new Set([...dia.comidasCompletadas, ...dia.alimentos.map((a) => a.comida)])];
+}
 const CONFIG_NUTRICION = 'nutricion';
 
 export default function Nutricion() {
@@ -113,10 +109,10 @@ export default function Nutricion() {
     uid ? `dia-${uid}-${fecha}` : null,
     async () => {
       const registro = await obtenerRegistroDia(uid!, fecha);
-      return { alimentos: registro.alimentos, comidasCompletadas: registro.comidasCompletadas, vasosAgua: registro.vasosAgua };
+      return { alimentos: registro.alimentos, comidasCompletadas: registro.comidasCompletadas, vasosAgua: registro.vasosAgua, ajustesPlan: registro.ajustesPlan ?? [] };
     },
     (datos) => {
-      const totales = totalesDelDia(datos, planComidas);
+      const totales = totalesDelDia(datos, aplicarAjustes(planComidas, datos.ajustesPlan));
       return guardarRegistroDia(uid!, {
         ...datos,
         caloriasConsumidas: totales.calorias,
@@ -143,8 +139,9 @@ export default function Nutricion() {
   const [momentoNuevaComida, setMomentoNuevaComida] = useState('Colacion');
   const [gramosNuevaComida, setGramosNuevaComida] = useState('100');
   const [ingredientesNuevaComida, setIngredientesNuevaComida] = useState<string[]>([]);
-  const consumido = totalesDelDia(dia.valor, planComidas);
-  const caloriasPlan = planComidas.reduce((total, comida) => total + caloriasDeComida(comida), 0);
+  const planDeHoy = aplicarAjustes(planComidas, dia.valor.ajustesPlan);
+  const consumido = totalesDelDia(dia.valor, planDeHoy);
+  const caloriasPlan = planDeHoy.reduce((total, comida) => total + caloriasDeComida(comida), 0);
   const caloriasRegistradas = consumido.calorias;
   const porcentajeCalorias = Math.min(100, Math.round((caloriasRegistradas / requerimiento.caloriasObjetivo) * 100));
   // Ingredientes que el usuario no tiene; se excluyen de las sustituciones.
@@ -158,6 +155,28 @@ export default function Nutricion() {
   const [comidaAjuste, setComidaAjuste] = useState<string | null>(null);
   const [explicaciones, setExplicaciones] = useState<string[]>([]);
   const errorGuardado = plan.error ?? dia.error ?? disponibilidad.error;
+
+  // Plan para el resto del dia: se recalcula desde el plan base con lo ya comido.
+  const hechas = comidasHechas(dia.valor);
+  const restoDelDia = planificarRestoDelDia(requerimiento, consumido, planComidas, hechas, new Date().getHours(), alimentosUSDA, noDisponibles);
+  const ajustesPendientes = dia.valor.ajustesPlan.filter((a) => !hechas.includes(a.comidaId));
+  const nuevosAjustes: AjusteComida[] = restoDelDia.comidas.map((c) => ({ comidaId: c.comidaId, alimentos: c.alimentos }));
+  const ajusteAplicado = JSON.stringify(ajustesPendientes) === JSON.stringify(nuevosAjustes);
+
+  /** Aplica el recalculo solo a las comidas pendientes; las ya comidas no cambian. */
+  function aplicarRestoDelDia() {
+    dia.actualizar((actual) => {
+      const hechasAhora = comidasHechas(actual);
+      return { ...actual, ajustesPlan: [...actual.ajustesPlan.filter((a) => hechasAhora.includes(a.comidaId)), ...nuevosAjustes] };
+    });
+  }
+
+  function quitarAjustesPendientes() {
+    dia.actualizar((actual) => {
+      const hechasAhora = comidasHechas(actual);
+      return { ...actual, ajustesPlan: actual.ajustesPlan.filter((a) => hechasAhora.includes(a.comidaId)) };
+    });
+  }
 
   function alternarComida(id: string) {
     dia.actualizar((actual) => ({
@@ -403,6 +422,30 @@ export default function Nutricion() {
           </View>
         )}
 
+        {consumido.calorias > 0 && (
+          <Tarjeta estilo={styles.restoCard}>
+            <View style={styles.explicacionTitulo}>
+              <Ionicons name={restoDelDia.estado === 'meta_alcanzada' ? 'leaf-outline' : 'time-outline'} size={20} color={Colors.primary} />
+              <Text style={styles.restoTitulo}>Plan para el resto de tu día</Text>
+              <Text style={styles.contador}>{Math.max(0, restoDelDia.restante.calorias)} kcal</Text>
+            </View>
+            <Text style={styles.restoMensaje}>{restoDelDia.mensaje}</Text>
+            {restoDelDia.comidas.map((c) => (
+              <View key={c.comidaId} style={styles.restoComida}>
+                <Text style={styles.restoMomento}>{c.momento} · {c.aporte.calorias} kcal · {Math.round(c.aporte.proteinasG)} g proteína</Text>
+                <Text style={styles.planPorciones}>{c.alimentos.map((a) => `${buscarAlimento(a.alimentoId)?.nombre ?? a.alimentoId} ${a.gramos} g`).join(' · ')}</Text>
+              </View>
+            ))}
+            {restoDelDia.comidas.length > 0 && (
+              ajusteAplicado ? (
+                <Pressable onPress={quitarAjustesPendientes}><Text style={styles.restaurarTexto}>Aplicado a tu plan de hoy · Volver a las porciones originales</Text></Pressable>
+              ) : (
+                <Pressable onPress={aplicarRestoDelDia} style={styles.aplicarBoton} accessibilityRole="button"><Text style={styles.guardarTexto}>Aplicar a mi plan de hoy</Text></Pressable>
+              )
+            )}
+          </Tarjeta>
+        )}
+
         <View style={styles.tituloFila}>
           <View><Text style={styles.seccion}>Plan de comidas</Text><Text style={styles.seccionAyuda}>Plan diario: {caloriasPlan} kcal · Marca una comida al completarla. Toca ⇄ si te falta un ingrediente.</Text></View>
           <View style={styles.contadorColumna}><Text style={styles.contador}>{comidasCompletadas.length}/{planComidas.length}</Text><Pressable onPress={() => setModalPlan(true)}><Ionicons name="add-circle" size={25} color={Colors.primary} /></Pressable></View>
@@ -430,8 +473,9 @@ export default function Nutricion() {
           </View>
         )}
 
-        {planComidas.map((comida) => {
+        {planDeHoy.map((comida) => {
           const completada = comidasCompletadas.includes(comida.id);
+          const ajustadaHoy = dia.valor.ajustesPlan.some((ajuste) => ajuste.comidaId === comida.id);
           return (
             <Pressable key={comida.id} onPress={() => alternarComida(comida.id)}>
               <Tarjeta estilo={{ ...styles.comida, ...(completada ? styles.comidaCompleta : {}) }}>
@@ -441,7 +485,7 @@ export default function Nutricion() {
                 <View style={styles.comidaInfo}>
                   <Text style={styles.momento}>{comida.momento}</Text>
                   <Text style={styles.comidaTitulo}>{comida.titulo}</Text>
-                  <Text style={styles.comidaDetalle}>{comida.detalle}</Text>
+                  <Text style={styles.comidaDetalle}>{ajustadaHoy ? 'Porciones ajustadas para hoy' : comida.detalle}</Text>
                   <Text style={styles.planPorciones}>{porcionesDeComida(comida)}</Text>
                 </View>
                 <View style={styles.comidaMeta}>
@@ -620,6 +664,12 @@ const styles = StyleSheet.create({
   gramosNuevaInput: { width: 80, height: 42, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.sm, backgroundColor: Colors.surface, color: Colors.textPrimary, textAlign: 'center', ...Typography.body },
   guardarBoton: { alignItems: 'center', backgroundColor: Colors.primary, borderRadius: Radius.md, paddingVertical: Spacing.md, marginTop: Spacing.lg },
   guardarTexto: { ...Typography.button, color: Colors.textOnPrimary },
+  restoCard: { marginTop: Spacing.lg, borderWidth: 1, borderColor: Colors.primaryLight, gap: Spacing.sm },
+  restoTitulo: { ...Typography.bodyStrong, color: Colors.textPrimary, flex: 1 },
+  restoMensaje: { ...Typography.caption, color: Colors.textSecondary, lineHeight: 18 },
+  restoComida: { borderTopWidth: 1, borderTopColor: Colors.divider, paddingTop: Spacing.sm },
+  restoMomento: { ...Typography.caption, color: Colors.primary },
+  aplicarBoton: { alignItems: 'center', backgroundColor: Colors.primary, borderRadius: Radius.md, paddingVertical: Spacing.sm, marginTop: Spacing.xs },
   notaTexto: { ...Typography.caption, color: Colors.textMuted, marginTop: Spacing.xs, fontStyle: 'italic' },
   explicacionCard: { backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.md, gap: Spacing.sm },
   explicacionTitulo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },

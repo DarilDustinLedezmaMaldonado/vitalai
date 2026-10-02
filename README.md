@@ -162,6 +162,15 @@ mismo grupo de alimentos, distribucion de energia (proteina/carbohidrato/grasa)
 mas cercana y porcion ajustada para conservar las calorias. Cada cambio muestra
 una explicacion educativa.
 
+### Plan para el resto del dia
+
+`src/utils/planificacionDia.ts` recalcula las comidas pendientes segun lo que
+el usuario ya comio. Parte de su propio plan y ajusta porciones: primero cubre
+la proteina que falta (lo que mas sacia), mantiene o aumenta verduras y frutas,
+y reparte el resto entre almidones y grasas. Si la meta ya se alcanzo propone
+opciones ligeras sin sugerir ayunos; si falta mucho y es tarde, limita la porcion.
+El ajuste se guarda solo para ese dia y no modifica el plan base.
+
 ### Modo demo forzado
 
 Para pruebas o presentaciones sin internet se puede ignorar Firebase:
