@@ -11,6 +11,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Logo } from '@/components/Tarjeta';
 import Boton from '@/components/Boton';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, Layout } from '@/constants/Layout';
@@ -23,6 +25,7 @@ const BENEFICIOS = [
 ] as const;
 
 export default function Bienvenida() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const router = useRouter();
 
   return (
@@ -68,7 +71,7 @@ export default function Bienvenida() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -115,4 +118,4 @@ const styles = StyleSheet.create({
   acciones: {
     paddingBottom: Spacing.xl,
   },
-});
+}));

@@ -34,3 +34,11 @@
 - Un color por métrica, solo en gráficos: calorías coral, agua azul, proteína violeta,
   carbohidratos ámbar, grasas rosa.
 - Colores escritos a mano reemplazados por tokens (contenedores de estado, velo modal).
+
+## Actualización 2026-10-02 — Paleta elegible por el usuario
+- Tres paletas con los mismos roles (`src/constants/Paletas.ts`): Fresca (por defecto),
+  Vibrante y Amanecer. Contraste de texto >= 4.5:1 en las tres.
+- `Colors` pasa a ser la paleta activa; `crearEstilos` recrea las hojas de estilo
+  solo cuando cambia la paleta; `TemaProvider` la carga antes de dibujar y la guarda
+  en el dispositivo. Cada pantalla se suscribe con `useTema()`.
+- Selector "Apariencia" en Perfil, con vista previa de cada paleta; cambio en vivo.

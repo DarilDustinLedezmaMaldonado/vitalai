@@ -14,6 +14,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Radius, Spacing, Layout } from '@/constants/Layout';
@@ -71,7 +72,7 @@ export default function CampoTexto({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: {
     marginBottom: Spacing.lg,
   },
@@ -102,4 +103,4 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     paddingVertical: 0,
   },
-});
+}));

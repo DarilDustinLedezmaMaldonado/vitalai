@@ -11,6 +11,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, ViewStyle } from 'react-native';
 import Presionable from './Presionable';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -26,11 +27,12 @@ interface BotonProps {
   estilo?: ViewStyle;
 }
 
-const COLOR_TEXTO: Record<Variante, string> = {
-  primary: Colors.textOnPrimary,
-  secondary: Colors.onPrimaryContainer,
-  ghost: Colors.primaryDark,
-};
+/** Color del texto por variante (se lee en cada render: sigue a la paleta). */
+function colorTexto(variante: Variante): string {
+  if (variante === 'primary') return Colors.textOnPrimary;
+  if (variante === 'secondary') return Colors.onPrimaryContainer;
+  return Colors.primaryDark;
+}
 
 export default function Boton({
   titulo,
@@ -51,15 +53,15 @@ export default function Boton({
       accessibilityState={{ disabled: inactivo, busy: cargando }}
     >
       {cargando ? (
-        <ActivityIndicator color={COLOR_TEXTO[variante]} />
+        <ActivityIndicator color={colorTexto(variante)} />
       ) : (
-        <Text style={[styles.texto, { color: COLOR_TEXTO[variante] }]}>{titulo}</Text>
+        <Text style={[styles.texto, { color: colorTexto(variante) }]}>{titulo}</Text>
       )}
     </Presionable>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   base: {
     height: Layout.buttonHeight,
     borderRadius: Radius.pill,
@@ -79,4 +81,4 @@ const styles = StyleSheet.create({
   texto: {
     ...Typography.button,
   },
-});
+}));

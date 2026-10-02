@@ -11,6 +11,11 @@ import { Tarjeta } from '@/components/Tarjeta';
 import Boton from '@/components/Boton';
 import { useAuth } from '@/context/AuthContext';
 import { firebaseConfigurado } from '@/services/firebase';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
+import { IdPaleta, NOMBRE_PALETA, PALETAS } from '@/constants/Paletas';
+import Presionable from '@/components/Presionable';
+import { hapticaSeleccion } from '@/utils/haptica';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, Layout, Radius } from '@/constants/Layout';
@@ -28,6 +33,7 @@ const OPCIONES = [
 ] as const;
 
 export default function Perfil() {
+  const { paleta, cambiarPaleta } = useTema(); // se vuelve a dibujar al cambiar la paleta
   const { correo, perfil, salir, actualizarPerfil } = useAuth();
   const [cerrando, setCerrando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -140,10 +146,26 @@ export default function Perfil() {
           <Selector opciones={[['sedentario', 'Sedentario'], ['ligero', 'Ligero'], ['moderado', 'Moderado'], ['activo', 'Activo'], ['muy_activo', 'Muy activo']]} valor={actividad} onChange={(valor) => setActividad(valor as NivelActividad)} />
           <Text style={styles.etiqueta}>Objetivo</Text>
           <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar músculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
-          <View style={styles.caloriasCard}><Ionicons name="flame-outline" size={22} color={Colors.primary} /><Text style={styles.caloriasTexto}>Meta estimada{`\n`}<Text style={styles.caloriasNumero}>{caloriasEstimadas || '--'} kcal/dia</Text></Text></View>
+          <View style={styles.caloriasCard}><Ionicons name="flame-outline" size={22} color={Colors.primary} /><Text style={styles.caloriasTexto}>Meta estimada{`\n`}<Text style={styles.caloriasNumero}>{caloriasEstimadas || '--'} kcal/día</Text></Text></View>
           {mensaje ? <Text style={styles.mensaje}>{mensaje}</Text> : null}
           <Boton titulo="Guardar cambios" onPress={guardarPerfil} cargando={guardando} />
         </Tarjeta>
+
+        <Text style={styles.seccion}>Apariencia</Text>
+        <View style={styles.paletas}>
+          {(Object.keys(PALETAS) as IdPaleta[]).map((id) => (
+            <OpcionPaleta
+              key={id}
+              id={id}
+              activa={paleta === id}
+              onPress={() => {
+                if (paleta === id) return;
+                hapticaSeleccion();
+                cambiarPaleta(id);
+              }}
+            />
+          ))}
+        </View>
 
         <Text style={styles.seccion}>Ajustes</Text>
 
@@ -184,7 +206,33 @@ function Selector({ opciones, valor, onChange }: { opciones: string[][]; valor: 
   return <View style={styles.selector}>{opciones.map(([clave, etiqueta]) => <Pressable key={clave} onPress={() => onChange(clave)} style={[styles.opcionSelector, valor === clave && styles.opcionSelectorActiva]}><Text style={[styles.opcionSelectorTexto, valor === clave && styles.opcionTextoActivo]}>{etiqueta}</Text></Pressable>)}</View>;
 }
 
-const styles = StyleSheet.create({
+/** Tarjeta de vista previa de una paleta: color principal, acento y metricas. */
+function OpcionPaleta({ id, activa, onPress }: { id: IdPaleta; activa: boolean; onPress: () => void }) {
+  const p = PALETAS[id];
+  return (
+    <Presionable
+      onPress={onPress}
+      style={[styles.paleta, { backgroundColor: p.background, borderColor: activa ? p.primary : p.border }, activa && styles.paletaActiva]}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: activa }}
+      accessibilityLabel={`Paleta ${NOMBRE_PALETA[id].nombre}`}
+    >
+      <View style={styles.muestras}>
+        <View style={[styles.muestraGrande, { backgroundColor: p.primary }]} />
+        <View style={[styles.muestraGrande, { backgroundColor: p.accent }]} />
+      </View>
+      <View style={styles.puntos}>
+        {Object.values(p.metrica).map((color) => <View key={color} style={[styles.punto, { backgroundColor: color }]} />)}
+      </View>
+      <View style={styles.paletaPie}>
+        <Text style={[styles.paletaNombre, { color: p.textPrimary }]}>{NOMBRE_PALETA[id].nombre}</Text>
+        {activa && <Ionicons name="checkmark-circle" size={18} color={p.primary} />}
+      </View>
+    </Presionable>
+  );
+}
+
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -295,6 +343,15 @@ const styles = StyleSheet.create({
     color: Colors.success,
     marginBottom: Spacing.md,
   },
+  paletas: { flexDirection: 'row', gap: Spacing.sm },
+  paleta: { flex: 1, borderRadius: Radius.md, borderWidth: 1, padding: Spacing.md, gap: Spacing.sm },
+  paletaActiva: { borderWidth: 2 },
+  muestras: { flexDirection: 'row', gap: 6 },
+  muestraGrande: { flex: 1, height: 28, borderRadius: Radius.sm },
+  puntos: { flexDirection: 'row', gap: 4 },
+  punto: { width: 10, height: 10, borderRadius: 5 },
+  paletaPie: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  paletaNombre: { ...Typography.label },
   seccion: {
     ...Typography.sectionTitle,
     color: Colors.textPrimary,
@@ -335,4 +392,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: Spacing.xl,
   },
-});
+}));

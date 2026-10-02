@@ -21,6 +21,8 @@ import Boton from '@/components/Boton';
 import { registrarUsuario } from '@/services/authService';
 import { useAuth } from '@/context/AuthContext';
 import { validarRegistro } from '@/utils/validaciones';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, Layout } from '@/constants/Layout';
@@ -28,6 +30,7 @@ import { calcularCaloriasObjetivo, calcularGET, calcularTMB } from '@/utils/calc
 import { NivelActividad, ObjetivoComposicion, Sexo, PerfilUsuario } from '@/types/dataset';
 
 export default function Registro() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const router = useRouter();
   const { refrescar } = useAuth();
 
@@ -185,7 +188,7 @@ export default function Registro() {
               <Selector opciones={[['sedentario', 'Sedentario'], ['ligero', 'Ligero'], ['moderado', 'Moderado'], ['activo', 'Activo'], ['muy_activo', 'Muy activo']]} valor={actividad} onChange={(valor) => setActividad(valor as NivelActividad)} />
               <Text style={styles.etiqueta}>¿Qué quieres lograr?</Text>
               <Selector opciones={[['perdida_grasa', 'Perder grasa'], ['mantenimiento', 'Mantenerme'], ['ganancia_muscular', 'Ganar músculo']]} valor={objetivo} onChange={(valor) => setObjetivo(valor as ObjetivoComposicion)} />
-              <View style={styles.caloriasPreview}><Ionicons name="flame-outline" size={20} color={Colors.primary} /><Text style={styles.caloriasPreviewTexto}>Meta estimada: <Text style={styles.caloriasPreviewNumero}>{caloriasEstimadas || '--'} kcal/dia</Text></Text></View>
+              <View style={styles.caloriasPreview}><Ionicons name="flame-outline" size={20} color={Colors.primary} /><Text style={styles.caloriasPreviewTexto}>Meta estimada: <Text style={styles.caloriasPreviewNumero}>{caloriasEstimadas || '--'} kcal/día</Text></Text></View>
             </>}
 
             {error && <Text style={styles.error}>{error}</Text>}
@@ -251,7 +254,7 @@ function Selector({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -358,4 +361,4 @@ const styles = StyleSheet.create({
     ...Typography.bodyStrong,
     color: Colors.primary,
   },
-});
+}));

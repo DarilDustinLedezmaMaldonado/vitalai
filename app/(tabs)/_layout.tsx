@@ -10,6 +10,8 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { FontFamily } from '@/constants/Typography';
 
@@ -32,6 +34,7 @@ function IconoPestana({ activo, icono, iconoActivo }: { activo: boolean; icono: 
 }
 
 export default function TabsLayout() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   return (
     <Tabs
       screenOptions={{
@@ -57,7 +60,7 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   barra: {
     backgroundColor: Colors.surfaceAlt,
     borderTopWidth: 0,
@@ -84,4 +87,4 @@ const styles = StyleSheet.create({
   indicadorActivo: {
     backgroundColor: Colors.primaryContainer,
   },
-});
+}));

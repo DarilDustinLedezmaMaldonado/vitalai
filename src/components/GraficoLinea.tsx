@@ -9,6 +9,7 @@
 import React, { useState } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Line, Path, Stop } from 'react-native-svg';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 
@@ -80,11 +81,11 @@ export default function GraficoLinea({ puntos, alto = 150, color = Colors.marca,
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   valorActual: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },
   valorNumero: { ...Typography.subtitle, color: Colors.textPrimary },
   valorUnidad: { ...Typography.caption, color: Colors.textSecondary },
   ejeX: { height: 20, position: 'relative' },
   etiqueta: { ...Typography.caption, fontSize: 12, color: Colors.textMuted, position: 'absolute', width: 40, textAlign: 'center' },
   rango: { ...Typography.caption, fontSize: 12, color: Colors.textMuted, marginTop: 4 },
-});
+}));

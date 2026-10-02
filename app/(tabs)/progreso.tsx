@@ -11,6 +11,8 @@ import { fechaLocal, guardarRegistroDia } from '@/services/datosService';
 import { useHistorialUsuario } from '@/hooks/useHistorialUsuario';
 import { ObjetivoComposicion } from '@/types/dataset';
 import { hapticaExito } from '@/utils/haptica';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -26,6 +28,7 @@ const NOMBRE_OBJETIVO: Record<ObjetivoComposicion, string> = {
 };
 
 export default function Progreso() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const { perfilActual, registros, cargando, error, recargar } = useHistorialUsuario();
   const [vista, setVista] = useState<'peso' | 'habitos'>('peso');
   const [pesoHoy, setPesoHoy] = useState('');
@@ -131,7 +134,7 @@ function ResumenFila({ etiqueta, valor, ultimo = false }: { etiqueta: string; va
   return <View style={[styles.resumenFila, !ultimo && styles.resumenBorde]}><Text style={styles.resumenEtiqueta}>{etiqueta}</Text><Text style={styles.resumenValor}>{valor}</Text></View>;
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   encabezado: { ...Typography.title, color: Colors.textPrimary },
@@ -175,4 +178,4 @@ const styles = StyleSheet.create({
   resumenValor: { ...Typography.bodyStrong, color: Colors.textPrimary },
   insight: { flexDirection: 'row', backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: Spacing.md, marginTop: Spacing.lg, gap: Spacing.sm },
   insightTexto: { ...Typography.caption, color: Colors.primaryDark, flex: 1 },
-});
+}));

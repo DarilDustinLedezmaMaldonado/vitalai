@@ -34,6 +34,8 @@ import {
   obtenerRegistroDia,
 } from '@/services/datosService';
 import { hapticaExito, hapticaSeleccion } from '@/utils/haptica';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -69,6 +71,7 @@ const DIA_VACIO: DiaNutricion = { alimentos: [], comidasCompletadas: [], vasosAg
 const CONFIG_NUTRICION = 'nutricion';
 
 export default function Nutricion() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const { uid, perfil } = useAuth();
   const perfilActual = perfil ?? perfilDemo;
   const requerimiento = calcularRequerimiento(perfilActual);
@@ -581,7 +584,7 @@ function Macro({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return <View style={styles.macro}><Text style={styles.macroValor}>{valor}</Text><Text style={styles.macroEtiqueta}>{etiqueta}</Text></View>;
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   encabezado: { ...Typography.title, color: Colors.textPrimary },
@@ -699,4 +702,4 @@ const styles = StyleSheet.create({
   registroNombre: { ...Typography.bodyStrong, color: Colors.textPrimary },
   registroDetalle: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
   registroCalorias: { ...Typography.bodyStrong, color: Colors.primary, marginLeft: Spacing.sm },
-});
+}));

@@ -6,7 +6,7 @@
  * segun el estado de sesion.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,10 +18,12 @@ import {
   GoogleSans_700Bold,
 } from '@expo-google-fonts/google-sans';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { TemaProvider, useTema } from '@/context/TemaContext';
 import Cargando from '@/components/Cargando';
 
 /** Redirige al usuario segun su estado de autenticacion. */
 function Enrutador() {
+  useTema();
   const { cargando, autenticado } = useAuth();
   const segmentos = useSegments();
   const router = useRouter();
@@ -56,16 +58,21 @@ export default function RootLayout() {
     GoogleSans_700Bold,
   });
 
-  if (!fuentesListas) {
-    return <Cargando mensaje="Cargando recursos..." />;
-  }
+  // La paleta guardada se aplica antes de dibujar la app (sin parpadeo de color).
+  const [temaListo, setTemaListo] = useState(false);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <StatusBar style="dark" />
-        <Enrutador />
-      </AuthProvider>
-    </GestureHandlerRootView>
+    <TemaProvider alCargar={() => setTemaListo(true)}>
+      {!fuentesListas || !temaListo ? (
+        <Cargando mensaje="Cargando recursos..." />
+      ) : (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AuthProvider>
+            <StatusBar style="dark" />
+            <Enrutador />
+          </AuthProvider>
+        </GestureHandlerRootView>
+      )}
+    </TemaProvider>
   );
 }

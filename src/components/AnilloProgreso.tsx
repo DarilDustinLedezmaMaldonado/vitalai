@@ -9,6 +9,7 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { crearEstilos } from '@/constants/estilos';
 
 export interface Anillo {
   valor: number;
@@ -67,10 +68,10 @@ export default function AnilloProgreso({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   centro: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

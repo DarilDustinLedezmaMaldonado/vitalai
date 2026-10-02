@@ -5,6 +5,7 @@
 import React, { ReactNode } from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography, FontFamily } from '@/constants/Typography';
 import { Radius, Spacing, Shadow } from '@/constants/Layout';
@@ -51,7 +52,7 @@ export function Logo({ tamano = 'md' }: { tamano?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   tarjeta: {
     borderRadius: Radius.lg,
     padding: Spacing.lg,
@@ -85,6 +86,6 @@ const styles = StyleSheet.create({
   logoAcento: {
     color: Colors.marca,
   },
-});
+}));
 
 export default Tarjeta;

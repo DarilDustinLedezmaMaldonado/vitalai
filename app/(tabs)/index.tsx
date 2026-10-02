@@ -20,6 +20,8 @@ import { usePlanRestoDelDia } from '@/hooks/usePlanRestoDelDia';
 import { calcularResumenProgreso } from '@/services/analisisService';
 import { fechaLocal } from '@/services/datosService';
 import { calcularRequerimiento } from '@/utils/calculoNutricional';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -28,6 +30,7 @@ const META_VASOS = 8;
 const PREGUNTAS_RAPIDAS = ['¿Qué como ahora?', '¿Cómo voy hoy?', '¿Cómo va mi progreso?'];
 
 export default function Inicio() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const { correo, uid, perfil } = useAuth();
   const router = useRouter();
   const { perfilActual, registros } = useHistorialUsuario();
@@ -176,7 +179,7 @@ function Metrica({ icono, valor, etiqueta }: { icono: keyof typeof Ionicons.glyp
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.md, paddingBottom: Spacing.xxl },
   flex: { flex: 1 },
@@ -224,4 +227,4 @@ const styles = StyleSheet.create({
   chipTexto: { ...Typography.label, color: Colors.textSecondary },
   nota: { flexDirection: 'row', gap: Spacing.sm, backgroundColor: Colors.infoContainer, borderRadius: Radius.md, padding: Spacing.md, marginTop: Spacing.xl },
   notaTexto: { ...Typography.caption, color: Colors.textPrimary, flex: 1 },
-});
+}));

@@ -21,11 +21,14 @@ import Boton from '@/components/Boton';
 import { iniciarSesion, recuperarPassword } from '@/services/authService';
 import { useAuth } from '@/context/AuthContext';
 import { validarLogin } from '@/utils/validaciones';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, Layout } from '@/constants/Layout';
 
 export default function Login() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const router = useRouter();
   const { refrescar } = useAuth();
 
@@ -147,7 +150,7 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -204,4 +207,4 @@ const styles = StyleSheet.create({
     ...Typography.bodyStrong,
     color: Colors.primary,
   },
-});
+}));

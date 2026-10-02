@@ -6,6 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
 import { hapticaExito, hapticaSeleccion } from '@/utils/haptica';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -65,6 +67,7 @@ const SEMANA_VACIA: AvanceSemana = { rutinasCompletadas: [], ejerciciosCompletad
 const SIN_PERSONALIZADOS: Personalizados = { ejerciciosPersonalizados: [], planesPersonalizados: [] };
 
 export default function Entrenamiento() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const { uid } = useAuth();
   const lunes = inicioSemana();
   const semana = useDatoPersistente<AvanceSemana>(
@@ -254,7 +257,7 @@ export default function Entrenamiento() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   encabezado: { ...Typography.title, color: Colors.textPrimary },
@@ -321,4 +324,4 @@ const styles = StyleSheet.create({
   listaEjerciciosModal: { maxHeight: 150, backgroundColor: Colors.surface, borderRadius: Radius.md, paddingHorizontal: Spacing.md },
   ejercicioModal: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.divider },
   ejercicioModalTexto: { ...Typography.body, color: Colors.textPrimary },
-});
+}));

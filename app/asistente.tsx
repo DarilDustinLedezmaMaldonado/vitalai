@@ -35,6 +35,8 @@ import {
 } from '@/services/asistente/geminiService';
 import { respuestaLocal } from '@/services/asistente/respuestaLocal';
 import { calcularRequerimiento } from '@/utils/calculoNutricional';
+import { useTema } from '@/context/TemaContext';
+import { crearEstilos } from '@/constants/estilos';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -63,6 +65,7 @@ const ICONO_ACCION: Record<AccionRealizada['tipo'], keyof typeof Ionicons.glyphM
 };
 
 export default function Asistente() {
+  useTema(); // se vuelve a dibujar al cambiar la paleta
   const router = useRouter();
   const { q } = useLocalSearchParams<{ q?: string }>();
   const { uid, perfil } = useAuth();
@@ -241,7 +244,7 @@ export default function Asistente() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = crearEstilos(() => StyleSheet.create({
   contenedor: { flex: 1, backgroundColor: Colors.background },
   flex: { flex: 1 },
   encabezado: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Layout.screenPadding, paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.divider, backgroundColor: Colors.surface },
@@ -275,4 +278,4 @@ const styles = StyleSheet.create({
   botonPrimario: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: Colors.primary, borderRadius: Radius.md, paddingVertical: Spacing.md, marginTop: Spacing.md },
   botonPrimarioTexto: { ...Typography.button, color: Colors.textOnPrimary },
   enlace: { ...Typography.body, color: Colors.primary, marginTop: Spacing.sm },
-});
+}));
