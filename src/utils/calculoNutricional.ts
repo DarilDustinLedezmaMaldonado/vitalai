@@ -108,3 +108,64 @@ export function calcularIMC(pesoKg: number, alturaCm: number): number {
   const alturaM = alturaCm / 100;
   return Number((pesoKg / (alturaM * alturaM)).toFixed(1));
 }
+
+/** Aporte nutricional de una porcion de un alimento del catalogo. */
+export interface AportePorcion {
+  calorias: number;
+  proteinasG: number;
+  carbohidratosG: number;
+  grasasG: number;
+}
+
+/**
+ * Calcula el aporte de una porcion con regla de tres sobre los valores por
+ * 100 g del catalogo: valor = valor_por_100_g * gramos / 100.
+ */
+export function calcularAportePorcion(
+  alimento: {
+    caloriasPor100g: number;
+    proteinasPor100g: number;
+    carbohidratosPor100g: number;
+    grasasPor100g: number;
+  },
+  gramos: number
+): AportePorcion {
+  const factor = gramos / 100;
+  return {
+    calorias: Math.round(alimento.caloriasPor100g * factor),
+    proteinasG: Number((alimento.proteinasPor100g * factor).toFixed(1)),
+    carbohidratosG: Number((alimento.carbohidratosPor100g * factor).toFixed(1)),
+    grasasG: Number((alimento.grasasPor100g * factor).toFixed(1)),
+  };
+}
+
+/** Suma varios aportes nutricionales. */
+export function sumarAportes(aportes: AportePorcion[]): AportePorcion {
+  const total = aportes.reduce(
+    (acc, a) => ({
+      calorias: acc.calorias + a.calorias,
+      proteinasG: acc.proteinasG + a.proteinasG,
+      carbohidratosG: acc.carbohidratosG + a.carbohidratosG,
+      grasasG: acc.grasasG + a.grasasG,
+    }),
+    { calorias: 0, proteinasG: 0, carbohidratosG: 0, grasasG: 0 }
+  );
+  return {
+    calorias: Math.round(total.calorias),
+    proteinasG: Number(total.proteinasG.toFixed(1)),
+    carbohidratosG: Number(total.carbohidratosG.toFixed(1)),
+    grasasG: Number(total.grasasG.toFixed(1)),
+  };
+}
+
+/** Margen aceptado alrededor de la meta calorica para considerar el dia cumplido. */
+export const MARGEN_CUMPLIMIENTO = 0.1;
+
+/**
+ * Un dia cumple el plan cuando las calorias consumidas quedan dentro de
+ * +-10 % de la meta diaria. Este valor alimenta la adherencia del dataset.
+ */
+export function cumpleMetaCalorica(consumidas: number, objetivo: number): boolean {
+  if (objetivo <= 0 || consumidas <= 0) return false;
+  return Math.abs(consumidas - objetivo) / objetivo <= MARGEN_CUMPLIMIENTO;
+}

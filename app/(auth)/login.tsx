@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Logo } from '@/components/Tarjeta';
 import CampoTexto from '@/components/CampoTexto';
 import Boton from '@/components/Boton';
-import { iniciarSesion } from '@/services/authService';
+import { iniciarSesion, recuperarPassword } from '@/services/authService';
 import { useAuth } from '@/context/AuthContext';
 import { validarLogin } from '@/utils/validaciones';
 import Colors from '@/constants/Colors';
@@ -33,6 +33,19 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  async function manejarRecuperacion() {
+    setAviso(null);
+    if (!correo.trim()) {
+      setError('Escribe tu correo arriba y vuelve a tocar "Olvidaste tu contrasena".');
+      return;
+    }
+    setError(null);
+    const resultado = await recuperarPassword(correo);
+    if (resultado.exito) setAviso(resultado.mensaje ?? null);
+    else setError(resultado.mensaje ?? 'No se pudo enviar el correo.');
+  }
 
   async function manejarLogin() {
     if (cargando) return;
@@ -105,7 +118,12 @@ export default function Login() {
               onChangeText={setPassword}
             />
 
+            <TouchableOpacity onPress={manejarRecuperacion} style={styles.olvido}>
+              <Text style={styles.olvidoTexto}>Olvidaste tu contrasena?</Text>
+            </TouchableOpacity>
+
             {error && <Text style={styles.error}>{error}</Text>}
+            {aviso && <Text style={styles.aviso}>{aviso}</Text>}
 
             <Boton
               titulo="Iniciar sesion"
@@ -155,6 +173,18 @@ const styles = StyleSheet.create({
   },
   formulario: {
     marginTop: Spacing.xxl,
+  },
+  olvido: {
+    alignSelf: 'flex-end',
+  },
+  olvidoTexto: {
+    ...Typography.caption,
+    color: Colors.primary,
+  },
+  aviso: {
+    ...Typography.caption,
+    color: Colors.success,
+    textAlign: 'center',
   },
   error: {
     ...Typography.caption,

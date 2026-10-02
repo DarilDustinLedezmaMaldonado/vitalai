@@ -8,10 +8,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
 import Boton from '@/components/Boton';
-import { perfilesDemo, registrosDemo } from '@/data/datasetDemo';
+import { perfilesDemo } from '@/data/datasetDemo';
 import { AlimentoUSDA, alimentosUSDA } from '@/data/alimentosUSDA';
-import { calcularRequerimiento } from '@/utils/calculoNutricional';
+import {
+  AportePorcion,
+  calcularAportePorcion,
+  calcularRequerimiento,
+  cumpleMetaCalorica,
+  sumarAportes,
+} from '@/utils/calculoNutricional';
 import { useAuth } from '@/context/AuthContext';
+import { useDatoPersistente } from '@/hooks/useDatoPersistente';
+import { buscarSustituto } from '@/utils/sustitucion';
+import {
+  AlimentoRegistrado,
+  fechaLocal,
+  guardarConfiguracion,
+  guardarRegistroDia,
+  obtenerConfiguracion,
+  obtenerRegistroDia,
+} from '@/services/datosService';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
@@ -38,56 +54,122 @@ const COMIDAS: Comida[] = [
   { id: 'cena', momento: 'Cena', titulo: 'Trucha, papa y ensalada', detalle: 'Trucha, papa cocida, tomate y lechuga', calorias: 0, icono: 'moon-outline', alimentos: [{ alimentoId: 'trucha-cocida', gramos: 150 }, { alimentoId: 'papa-cocida', gramos: 150 }, { alimentoId: 'tomate-crudo', gramos: 100 }, { alimentoId: 'lechuga-cruda', gramos: 60 }] },
 ];
 
+function buscarAlimento(id: string): AlimentoUSDA | undefined {
+  return alimentosUSDA.find((item) => item.id === id);
+}
+
+function aporteDeComida(comida: Comida): AportePorcion {
+  return sumarAportes(comida.alimentos.flatMap((ingrediente) => {
+    const alimento = buscarAlimento(ingrediente.alimentoId);
+    return alimento ? [calcularAportePorcion(alimento, ingrediente.gramos)] : [];
+  }));
+}
+
 function caloriasDeComida(comida: Comida): number {
-  return comida.alimentos.reduce((total, ingrediente) => {
-    const alimento = alimentosUSDA.find((item) => item.id === ingrediente.alimentoId);
-    return total + (alimento ? Math.round((alimento.caloriasPor100g * ingrediente.gramos) / 100) : 0);
-  }, 0);
+  return aporteDeComida(comida).calorias;
 }
 
 function porcionesDeComida(comida: Comida): string {
   return comida.alimentos.map((ingrediente) => {
-    const alimento = alimentosUSDA.find((item) => item.id === ingrediente.alimentoId);
+    const alimento = buscarAlimento(ingrediente.alimentoId);
     return alimento ? `${alimento.nombre} ${ingrediente.gramos} g` : '';
   }).filter(Boolean).join(' · ');
 }
 
 const perfilDemo = perfilesDemo[0];
 
-interface RegistroAlimento {
-  id: string;
+interface RegistroAlimento extends AlimentoRegistrado {
   alimento: AlimentoUSDA;
-  gramos: number;
-  calorias: number;
-  comida: string;
 }
 
+/** Datos del dia que el usuario edita en esta pantalla. */
+interface DiaNutricion {
+  alimentos: AlimentoRegistrado[];
+  comidasCompletadas: string[];
+  vasosAgua: number;
+}
+
+const DIA_VACIO: DiaNutricion = { alimentos: [], comidasCompletadas: [], vasosAgua: 0 };
+const CONFIG_NUTRICION = 'nutricion';
+
 export default function Nutricion() {
-  const { perfil } = useAuth();
+  const { uid, perfil } = useAuth();
   const perfilActual = perfil ?? perfilDemo;
   const requerimiento = calcularRequerimiento(perfilActual);
-  const registroInicial = registrosDemo.find((registro) => registro.idUsuario === perfilActual.idUsuario);
-  const [comidasCompletadas, setComidasCompletadas] = useState<string[]>([]);
-  const [planComidas, setPlanComidas] = useState<Comida[]>(COMIDAS);
-  const [vasosAgua, setVasosAgua] = useState(registroInicial?.vasosAgua ?? 0);
+  const fecha = fechaLocal();
+
+  // Plan de comidas personalizado del usuario (usuarios/{uid}/configuracion/nutricion).
+  const plan = useDatoPersistente<Comida[]>(
+    uid ? `plan-${uid}` : null,
+    async () => (await obtenerConfiguracion<{ planComidas: Comida[] }>(uid!, CONFIG_NUTRICION))?.planComidas ?? COMIDAS,
+    (planComidas) => guardarConfiguracion(uid!, CONFIG_NUTRICION, { planComidas }),
+    COMIDAS
+  );
+  const planComidas = plan.valor;
+  const setPlanComidas = plan.actualizar;
+
+  // Registro del dia (usuarios/{uid}/registrosDiarios/{fecha}).
+  const dia = useDatoPersistente<DiaNutricion>(
+    uid ? `dia-${uid}-${fecha}` : null,
+    async () => {
+      const registro = await obtenerRegistroDia(uid!, fecha);
+      return { alimentos: registro.alimentos, comidasCompletadas: registro.comidasCompletadas, vasosAgua: registro.vasosAgua };
+    },
+    (datos) => {
+      const totales = totalesDelDia(datos, planComidas);
+      return guardarRegistroDia(uid!, {
+        ...datos,
+        caloriasConsumidas: totales.calorias,
+        proteinasG: totales.proteinasG,
+        carbohidratosG: totales.carbohidratosG,
+        grasasG: totales.grasasG,
+        cumplioPlan: cumpleMetaCalorica(totales.calorias, requerimiento.caloriasObjetivo),
+      }, fecha);
+    },
+    DIA_VACIO
+  );
+  const { comidasCompletadas, vasosAgua } = dia.valor;
+  const alimentosAgregados: RegistroAlimento[] = dia.valor.alimentos.flatMap((registro) => {
+    const alimento = buscarAlimento(registro.alimentoId);
+    return alimento ? [{ ...registro, alimento }] : [];
+  });
+
   const [alimentoSeleccionado, setAlimentoSeleccionado] = useState(alimentosUSDA[0]);
   const [gramos, setGramos] = useState(String(alimentosUSDA[0].porcionSugeridaG));
   const [busqueda, setBusqueda] = useState('');
   const [comidaSeleccionada, setComidaSeleccionada] = useState(COMIDAS[0].id);
-  const [alimentosAgregados, setAlimentosAgregados] = useState<RegistroAlimento[]>([]);
   const [modalPlan, setModalPlan] = useState(false);
   const [nombreNuevaComida, setNombreNuevaComida] = useState('');
   const [momentoNuevaComida, setMomentoNuevaComida] = useState('Colacion');
   const [gramosNuevaComida, setGramosNuevaComida] = useState('100');
   const [ingredientesNuevaComida, setIngredientesNuevaComida] = useState<string[]>([]);
-  const caloriasAlimentos = alimentosAgregados.reduce((total, registro) => total + registro.calorias, 0);
-  const caloriasComidas = planComidas.filter((comida) => comidasCompletadas.includes(comida.id)).reduce((total, comida) => total + caloriasDeComida(comida), 0);
+  const consumido = totalesDelDia(dia.valor, planComidas);
   const caloriasPlan = planComidas.reduce((total, comida) => total + caloriasDeComida(comida), 0);
-  const caloriasRegistradas = caloriasAlimentos + caloriasComidas;
+  const caloriasRegistradas = consumido.calorias;
   const porcentajeCalorias = Math.min(100, Math.round((caloriasRegistradas / requerimiento.caloriasObjetivo) * 100));
+  // Ingredientes que el usuario no tiene; se excluyen de las sustituciones.
+  const disponibilidad = useDatoPersistente<string[]>(
+    uid ? `nodisp-${uid}` : null,
+    async () => (await obtenerConfiguracion<{ noDisponibles: string[] }>(uid!, CONFIG_NUTRICION))?.noDisponibles ?? [],
+    (noDisponibles) => guardarConfiguracion(uid!, CONFIG_NUTRICION, { noDisponibles }),
+    []
+  );
+  const noDisponibles = disponibilidad.valor;
+  const [comidaAjuste, setComidaAjuste] = useState<string | null>(null);
+  const [explicaciones, setExplicaciones] = useState<string[]>([]);
+  const errorGuardado = plan.error ?? dia.error ?? disponibilidad.error;
 
   function alternarComida(id: string) {
-    setComidasCompletadas((actuales) => actuales.includes(id) ? actuales.filter((actual) => actual !== id) : [...actuales, id]);
+    dia.actualizar((actual) => ({
+      ...actual,
+      comidasCompletadas: actual.comidasCompletadas.includes(id)
+        ? actual.comidasCompletadas.filter((comidaId) => comidaId !== id)
+        : [...actual.comidasCompletadas, id],
+    }));
+  }
+
+  function setVasosAgua(vasos: number) {
+    dia.actualizar((actual) => ({ ...actual, vasosAgua: vasos }));
   }
 
   function seleccionarAlimento(alimento: AlimentoUSDA) {
@@ -103,11 +185,18 @@ export default function Nutricion() {
   function agregarAlimento() {
     const cantidad = Number(gramos.replace(',', '.'));
     if (!Number.isFinite(cantidad) || cantidad <= 0) return;
-    const calorias = Math.round((alimentoSeleccionado.caloriasPor100g * cantidad) / 100);
-    setAlimentosAgregados((actuales) => [
-      ...actuales,
-      { id: `${alimentoSeleccionado.id}-${Date.now()}`, alimento: alimentoSeleccionado, gramos: cantidad, calorias, comida: comidaSeleccionada },
-    ]);
+    const nuevo: AlimentoRegistrado = {
+      id: `${alimentoSeleccionado.id}-${Date.now()}`,
+      alimentoId: alimentoSeleccionado.id,
+      gramos: cantidad,
+      comida: comidaSeleccionada,
+      ...calcularAportePorcion(alimentoSeleccionado, cantidad),
+    };
+    dia.actualizar((actual) => ({ ...actual, alimentos: [...actual.alimentos, nuevo] }));
+  }
+
+  function quitarAlimento(id: string) {
+    dia.actualizar((actual) => ({ ...actual, alimentos: actual.alimentos.filter((registro) => registro.id !== id) }));
   }
 
   function crearComida() {
@@ -128,12 +217,50 @@ export default function Nutricion() {
     setModalPlan(false);
   }
 
-  function eliminarComida(id: string) {
-    setPlanComidas((actuales) => actuales.filter((comida) => comida.id !== id));
-    setComidasCompletadas((actuales) => actuales.filter((comidaId) => comidaId !== id));
-    if (comidaSeleccionada === id) setComidaSeleccionada(planComidas.find((comida) => comida.id !== id)?.id ?? '');
+  /**
+   * Marca un ingrediente como no disponible y recalcula todas las comidas
+   * del plan que lo usan, conservando sus calorias (ver utils/sustitucion.ts).
+   */
+  function marcarNoDisponible(alimentoId: string) {
+    const excluidosBase = [...noDisponibles, alimentoId];
+    const textos: string[] = [];
+    const nuevoPlan = planComidas.map((comida) => {
+      const ingrediente = comida.alimentos.find((item) => item.alimentoId === alimentoId);
+      if (!ingrediente) return comida;
+      const enLaComida = comida.alimentos.map((item) => item.alimentoId);
+      const sustitucion = buscarSustituto(ingrediente, alimentosUSDA, [...excluidosBase, ...enLaComida]);
+      const nombre = buscarAlimento(alimentoId)?.nombre ?? 'el ingrediente';
+      textos.push(sustitucion
+        ? `${comida.momento}: ${sustitucion.explicacion}`
+        : `${comida.momento}: quitamos ${nombre} porque no queda otro alimento parecido disponible. Las verduras y frutas aportan pocas calorias, asi que tu meta casi no cambia.`);
+      return {
+        ...comida,
+        detalle: 'Ajustado segun los alimentos que tienes',
+        alimentos: sustitucion
+          ? comida.alimentos.map((item) => (item.alimentoId === alimentoId ? sustitucion.reemplazo : item))
+          : comida.alimentos.filter((item) => item.alimentoId !== alimentoId),
+      };
+    });
+    setPlanComidas(nuevoPlan);
+    disponibilidad.actualizar((actuales) => (actuales.includes(alimentoId) ? actuales : [...actuales, alimentoId]));
+    setExplicaciones(textos);
   }
 
+  function marcarDisponible(alimentoId: string) {
+    disponibilidad.actualizar((actuales) => actuales.filter((id) => id !== alimentoId));
+  }
+
+  function restaurarPlan() {
+    setPlanComidas(COMIDAS);
+    disponibilidad.actualizar([]);
+    setExplicaciones([]);
+  }
+
+  function eliminarComida(id: string) {
+    setPlanComidas((actuales) => actuales.filter((comida) => comida.id !== id));
+    dia.actualizar((actual) => ({ ...actual, comidasCompletadas: actual.comidasCompletadas.filter((comidaId) => comidaId !== id) }));
+    if (comidaSeleccionada === id) setComidaSeleccionada(planComidas.find((comida) => comida.id !== id)?.id ?? '');
+  }
 
   return (
     <SafeAreaView style={styles.contenedor}>
@@ -145,6 +272,8 @@ export default function Nutricion() {
         <Text style={styles.subencabezado}>
           Un plan sencillo para avanzar hacia tu objetivo.
         </Text>
+        {dia.cargando || plan.cargando ? <Text style={styles.estadoDatos}>Cargando tus datos...</Text> : null}
+        {errorGuardado ? <Text style={styles.estadoError}>{errorGuardado}</Text> : null}
 
         <Tarjeta estilo={styles.metaCard}>
           <View style={styles.metaEncabezado}>
@@ -168,9 +297,9 @@ export default function Nutricion() {
         </Tarjeta>
 
         <View style={styles.filaMacros}>
-          <Macro etiqueta="Proteina" valor={`${requerimiento.proteinasG} g`} />
-          <Macro etiqueta="Carbohidratos" valor={`${requerimiento.carbohidratosG} g`} />
-          <Macro etiqueta="Grasas" valor={`${requerimiento.grasasG} g`} />
+          <Macro etiqueta="Proteina" valor={`${Math.round(consumido.proteinasG)}/${requerimiento.proteinasG} g`} />
+          <Macro etiqueta="Carbohidratos" valor={`${Math.round(consumido.carbohidratosG)}/${requerimiento.carbohidratosG} g`} />
+          <Macro etiqueta="Grasas" valor={`${Math.round(consumido.grasasG)}/${requerimiento.grasasG} g`} />
         </View>
 
         <Text style={styles.seccion}>Agregar alimento</Text>
@@ -201,7 +330,7 @@ export default function Nutricion() {
               style={[styles.alimentoChip, alimento.id === alimentoSeleccionado.id && styles.alimentoChipActivo]}
             >
               <Text style={[styles.alimentoChipTexto, alimento.id === alimentoSeleccionado.id && styles.alimentoChipTextoActivo]}>
-                {alimento.nombre}
+                {alimento.nombre}{alimento.local ? ' · BO' : ''}
               </Text>
             </Pressable>
           ))}
@@ -246,6 +375,7 @@ export default function Nutricion() {
             </Pressable>
           </View>
           <Text style={styles.fuenteTexto}>{alimentoSeleccionado.fuente}</Text>
+          {alimentoSeleccionado.nota ? <Text style={styles.notaTexto}>{alimentoSeleccionado.nota}</Text> : null}
         </Tarjeta>
 
         {alimentosAgregados.length > 0 && (
@@ -264,7 +394,7 @@ export default function Nutricion() {
                   {registrosComida.map((registro) => (
                     <View key={registro.id} style={styles.registroFila}>
                       <View style={styles.registroInfo}><Text style={styles.registroNombre}>{registro.alimento.nombre}</Text><Text style={styles.registroDetalle}>{registro.gramos} g · {registro.calorias} kcal</Text></View>
-                      <Ionicons name="checkmark-circle" size={19} color={Colors.success} />
+                      <Pressable onPress={() => quitarAlimento(registro.id)} hitSlop={8}><Ionicons name="close-circle-outline" size={20} color={Colors.danger} /></Pressable>
                     </View>
                   ))}
                 </View>
@@ -274,9 +404,31 @@ export default function Nutricion() {
         )}
 
         <View style={styles.tituloFila}>
-          <View><Text style={styles.seccion}>Plan de comidas</Text><Text style={styles.seccionAyuda}>Plan diario: {caloriasPlan} kcal · Marca una comida al completarla.</Text></View>
+          <View><Text style={styles.seccion}>Plan de comidas</Text><Text style={styles.seccionAyuda}>Plan diario: {caloriasPlan} kcal · Marca una comida al completarla. Toca ⇄ si te falta un ingrediente.</Text></View>
           <View style={styles.contadorColumna}><Text style={styles.contador}>{comidasCompletadas.length}/{planComidas.length}</Text><Pressable onPress={() => setModalPlan(true)}><Ionicons name="add-circle" size={25} color={Colors.primary} /></Pressable></View>
         </View>
+
+        {explicaciones.length > 0 && (
+          <View style={styles.explicacionCard}>
+            <View style={styles.explicacionTitulo}><Ionicons name="school-outline" size={18} color={Colors.primaryDark} /><Text style={styles.explicacionEncabezado}>Por que cambiamos tu plan</Text><Pressable onPress={() => setExplicaciones([])} hitSlop={8}><Ionicons name="close" size={18} color={Colors.textMuted} /></Pressable></View>
+            {explicaciones.map((texto) => <Text key={texto} style={styles.explicacionTexto}>{texto}</Text>)}
+          </View>
+        )}
+
+        {noDisponibles.length > 0 && (
+          <View style={styles.noDisponibles}>
+            <Text style={styles.noDisponiblesTitulo}>No tienes ahora (toca para marcar como disponible):</Text>
+            <View style={styles.opcionesFila}>
+              {noDisponibles.map((id) => (
+                <Pressable key={id} onPress={() => marcarDisponible(id)} style={styles.noDisponibleChip}>
+                  <Text style={styles.noDisponibleTexto}>{buscarAlimento(id)?.nombre ?? id}</Text>
+                  <Ionicons name="close" size={14} color={Colors.textSecondary} />
+                </Pressable>
+              ))}
+            </View>
+            <Pressable onPress={restaurarPlan}><Text style={styles.restaurarTexto}>Restaurar plan original</Text></Pressable>
+          </View>
+        )}
 
         {planComidas.map((comida) => {
           const completada = comidasCompletadas.includes(comida.id);
@@ -299,7 +451,10 @@ export default function Nutricion() {
                     size={24}
                     color={completada ? Colors.success : Colors.textMuted}
                   />
-                  <Pressable onPress={() => eliminarComida(comida.id)} style={styles.eliminarBoton}>
+                  <Pressable onPress={() => setComidaAjuste(comida.id)} style={styles.eliminarBoton} hitSlop={6} accessibilityRole="button" accessibilityLabel={`Cambiar ingrediente de ${comida.momento}`}>
+                    <Ionicons name="swap-horizontal-outline" size={19} color={Colors.primary} />
+                  </Pressable>
+                  <Pressable onPress={() => eliminarComida(comida.id)} style={styles.eliminarBoton} accessibilityRole="button" accessibilityLabel={`Eliminar ${comida.momento}`}>
                     <Ionicons name="trash-outline" size={18} color={Colors.danger} />
                   </Pressable>
                 </View>
@@ -326,6 +481,33 @@ export default function Nutricion() {
                 <Ionicons name="water" size={17} color={indice < vasosAgua ? Colors.info : Colors.textMuted} />
               </Pressable>
             ))}
+
+            <Modal visible={comidaAjuste !== null} transparent animationType="slide" onRequestClose={() => setComidaAjuste(null)}>
+              <View style={styles.modalFondo}>
+                <View style={styles.modalCaja}>
+                  <View style={styles.modalEncabezado}>
+                    <Text style={styles.modalTitulo}>¿Te falta algún ingrediente?</Text>
+                    <Pressable onPress={() => setComidaAjuste(null)}><Ionicons name="close" size={24} color={Colors.textSecondary} /></Pressable>
+                  </View>
+                  <Text style={styles.modalAyuda}>Marca lo que no tienes. Lo reemplazamos por un alimento parecido, con las mismas calorias, en todas tus comidas.</Text>
+                  {planComidas.find((comida) => comida.id === comidaAjuste)?.alimentos.map((ingrediente) => {
+                    const alimento = buscarAlimento(ingrediente.alimentoId);
+                    if (!alimento) return null;
+                    return (
+                      <View key={ingrediente.alimentoId} style={styles.ingredienteFila}>
+                        <View style={styles.registroInfo}>
+                          <Text style={styles.registroNombre}>{alimento.nombre}</Text>
+                          <Text style={styles.registroDetalle}>{ingrediente.gramos} g · {calcularAportePorcion(alimento, ingrediente.gramos).calorias} kcal</Text>
+                        </View>
+                        <Pressable onPress={() => { marcarNoDisponible(ingrediente.alimentoId); setComidaAjuste(null); }} style={styles.noTengoBoton}>
+                          <Text style={styles.noTengoTexto}>No lo tengo</Text>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            </Modal>
 
             <Modal visible={modalPlan} transparent animationType="slide" onRequestClose={() => setModalPlan(false)}>
               <View style={styles.modalFondo}>
@@ -356,12 +538,18 @@ export default function Nutricion() {
         <Boton
           titulo="Reiniciar plan del dia"
           variante="secondary"
-          onPress={() => setComidasCompletadas([])}
+          onPress={() => dia.actualizar((actual) => ({ ...actual, comidasCompletadas: [] }))}
           estilo={styles.boton}
         />
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+/** Totales del dia: alimentos registrados + comidas del plan marcadas como hechas. */
+function totalesDelDia(dia: DiaNutricion, planComidas: Comida[]): AportePorcion {
+  const comidasHechas = planComidas.filter((comida) => dia.comidasCompletadas.includes(comida.id));
+  return sumarAportes([...dia.alimentos, ...comidasHechas.map(aporteDeComida)]);
 }
 
 function Macro({ etiqueta, valor }: { etiqueta: string; valor: string }) {
@@ -373,6 +561,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   encabezado: { ...Typography.title, color: Colors.textPrimary },
   subencabezado: { ...Typography.body, color: Colors.textSecondary, marginTop: Spacing.xs },
+  estadoDatos: { ...Typography.caption, color: Colors.textMuted, marginTop: Spacing.xs },
+  estadoError: { ...Typography.caption, color: Colors.danger, marginTop: Spacing.xs },
   metaCard: { backgroundColor: Colors.primary, marginTop: Spacing.xl },
   metaEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   metaEtiqueta: { ...Typography.label, color: Colors.textOnPrimary, opacity: 0.9 },
@@ -430,6 +620,20 @@ const styles = StyleSheet.create({
   gramosNuevaInput: { width: 80, height: 42, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.sm, backgroundColor: Colors.surface, color: Colors.textPrimary, textAlign: 'center', ...Typography.body },
   guardarBoton: { alignItems: 'center', backgroundColor: Colors.primary, borderRadius: Radius.md, paddingVertical: Spacing.md, marginTop: Spacing.lg },
   guardarTexto: { ...Typography.button, color: Colors.textOnPrimary },
+  notaTexto: { ...Typography.caption, color: Colors.textMuted, marginTop: Spacing.xs, fontStyle: 'italic' },
+  explicacionCard: { backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: Spacing.md, marginBottom: Spacing.md, gap: Spacing.sm },
+  explicacionTitulo: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  explicacionEncabezado: { ...Typography.bodyStrong, color: Colors.primaryDark, flex: 1 },
+  explicacionTexto: { ...Typography.caption, color: Colors.textPrimary, lineHeight: 18 },
+  noDisponibles: { marginBottom: Spacing.md },
+  noDisponiblesTitulo: { ...Typography.caption, color: Colors.textSecondary, marginBottom: Spacing.sm },
+  noDisponibleChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, backgroundColor: Colors.surface, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+  noDisponibleTexto: { ...Typography.caption, color: Colors.textSecondary, textDecorationLine: 'line-through' },
+  restaurarTexto: { ...Typography.caption, color: Colors.primary },
+  modalAyuda: { ...Typography.caption, color: Colors.textSecondary, marginBottom: Spacing.md },
+  ingredienteFila: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, borderBottomWidth: 1, borderBottomColor: Colors.divider, gap: Spacing.sm },
+  noTengoBoton: { borderWidth: 1, borderColor: Colors.danger, borderRadius: Radius.pill, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
+  noTengoTexto: { ...Typography.caption, color: Colors.danger },
   fuenteIntro: { ...Typography.caption, color: Colors.textSecondary, marginTop: -Spacing.sm, marginBottom: Spacing.sm },
   buscador: { flexDirection: 'row', alignItems: 'center', height: 48, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md },
   buscadorInput: { flex: 1, ...Typography.body, color: Colors.textPrimary, marginLeft: Spacing.sm },

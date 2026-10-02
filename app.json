@@ -42,12 +42,13 @@
       "typedRoutes": true
     },
     "extra": {
-      "firebaseApiKey": "",
-      "firebaseAuthDomain": "",
-      "firebaseProjectId": "",
-      "firebaseStorageBucket": "",
-      "firebaseMessagingSenderId": "",
-      "firebaseAppId": ""
+      "firebaseApiKey": "AIzaSyD91nLS772yTRwPkX7lMvUYki0DBRamhhQ",
+      "firebaseAuthDomain": "vitalia-f9ee4.firebaseapp.com",
+      "firebaseProjectId": "vitalia-f9ee4",
+      "firebaseStorageBucket": "vitalia-f9ee4.firebasestorage.app",
+      "firebaseMessagingSenderId": "195455446882",
+      "firebaseAppId": "1:195455446882:web:d3fa980a27321feeef063b",
+      "firebaseMeasurementId": "G-DZYSNFREMH"
     }
   }
 }

@@ -36,6 +36,7 @@ export default function Perfil() {
   const [edad, setEdad] = useState(String(perfilBase.edad));
   const [altura, setAltura] = useState(String(perfilBase.alturaCm));
   const [peso, setPeso] = useState(String(perfilBase.pesoInicialKg));
+  const [grasa, setGrasa] = useState(perfilBase.porcentajeGrasaInicial?.toString() ?? '');
   const [sexo, setSexo] = useState<Sexo>(perfilBase.sexo);
   const [actividad, setActividad] = useState<NivelActividad>(perfilBase.nivelActividad);
   const [objetivo, setObjetivo] = useState<ObjetivoComposicion>(perfilBase.objetivo);
@@ -46,6 +47,7 @@ export default function Perfil() {
     setEdad(String(perfilBase.edad));
     setAltura(String(perfilBase.alturaCm));
     setPeso(String(perfilBase.pesoInicialKg));
+    setGrasa(perfilBase.porcentajeGrasaInicial?.toString() ?? '');
     setSexo(perfilBase.sexo);
     setActividad(perfilBase.nivelActividad);
     setObjetivo(perfilBase.objetivo);
@@ -61,7 +63,12 @@ export default function Perfil() {
       setMensaje('Revisa nombre, edad, altura y peso antes de guardar.');
       return;
     }
-    const perfilActualizado: PerfilUsuario = { ...perfilBase, nombre: nombre.trim(), edad: edadNumero, alturaCm: alturaNumero, pesoInicialKg: pesoNumero, sexo, nivelActividad: actividad, objetivo };
+    const grasaNumero = grasa.trim() ? Number(grasa.replace(',', '.')) : null;
+    if (grasaNumero !== null && (!Number.isFinite(grasaNumero) || grasaNumero < 3 || grasaNumero > 60)) {
+      setMensaje('El porcentaje de grasa debe estar entre 3 y 60 %, o dejarse vacio.');
+      return;
+    }
+    const perfilActualizado: PerfilUsuario = { ...perfilBase, nombre: nombre.trim(), edad: edadNumero, alturaCm: alturaNumero, pesoInicialKg: pesoNumero, porcentajeGrasaInicial: grasaNumero, sexo, nivelActividad: actividad, objetivo };
     setGuardando(true);
     setMensaje('');
     try {
@@ -123,7 +130,10 @@ export default function Perfil() {
             <CampoTexto etiqueta="Edad" icono="calendar-outline" keyboardType="number-pad" value={edad} onChangeText={setEdad} contenedorStyle={styles.campoMitad} />
             <CampoTexto etiqueta="Altura (cm)" icono="resize-outline" keyboardType="number-pad" value={altura} onChangeText={setAltura} contenedorStyle={styles.campoMitad} />
           </View>
-          <CampoTexto etiqueta="Peso actual (kg)" icono="scale-outline" keyboardType="decimal-pad" value={peso} onChangeText={setPeso} />
+          <View style={styles.filaCampos}>
+            <CampoTexto etiqueta="Peso inicial (kg)" icono="scale-outline" keyboardType="decimal-pad" value={peso} onChangeText={setPeso} contenedorStyle={styles.campoMitad} />
+            <CampoTexto etiqueta="% grasa (opcional)" icono="body-outline" keyboardType="decimal-pad" value={grasa} onChangeText={setGrasa} contenedorStyle={styles.campoMitad} />
+          </View>
           <Text style={styles.etiqueta}>Sexo biologico</Text>
           <Selector opciones={[['femenino', 'Mujer'], ['masculino', 'Hombre']]} valor={sexo} onChange={(valor) => setSexo(valor as Sexo)} />
           <Text style={styles.etiqueta}>Actividad fisica</Text>

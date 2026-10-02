@@ -36,24 +36,29 @@ export function calcularResumenProgreso(
     };
   }
 
-  const ultimo = propios[propios.length - 1];
+  // No todos los dias tienen pesaje ni comidas registradas: se ignoran los ceros.
+  const conPeso = propios.filter((r) => r.pesoKg > 0);
+  const conCalorias = propios.filter((r) => r.caloriasConsumidas > 0);
+  const pesoActualKg =
+    conPeso.length > 0 ? conPeso[conPeso.length - 1].pesoKg : perfil.pesoInicialKg;
   const diasCumplidos = propios.filter((r) => r.cumplioPlan).length;
-  const sumaCalorias = propios.reduce(
+  const sumaCalorias = conCalorias.reduce(
     (acc, r) => acc + r.caloriasConsumidas,
     0
   );
 
   return {
     idUsuario: perfil.idUsuario,
-    pesoActualKg: ultimo.pesoKg,
+    pesoActualKg,
     variacionPesoKg: Number(
-      (ultimo.pesoKg - perfil.pesoInicialKg).toFixed(1)
+      (pesoActualKg - perfil.pesoInicialKg).toFixed(1)
     ),
     adherenciaPorcentaje: Math.round(
       (diasCumplidos / propios.length) * 100
     ),
     diasRegistrados: propios.length,
-    caloriasPromedio: Math.round(sumaCalorias / propios.length),
+    caloriasPromedio:
+      conCalorias.length > 0 ? Math.round(sumaCalorias / conCalorias.length) : 0,
   };
 }
 

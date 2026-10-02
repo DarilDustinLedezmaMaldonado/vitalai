@@ -2,7 +2,7 @@
  * VitalAI - Pantalla de Inicio (Dashboard)
  *
  * Pantalla principal tras el inicio de sesion. Resume el objetivo nutricional
- * y los indicadores del dataset sintetico de ejemplo.
+ * y los indicadores calculados con el historial guardado del usuario.
  */
 
 import React, { useState } from 'react';
@@ -11,34 +11,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Tarjeta } from '@/components/Tarjeta';
 import { useAuth } from '@/context/AuthContext';
-import { perfilesDemo, registrosDemo } from '@/data/datasetDemo';
+import { useHistorialUsuario } from '@/hooks/useHistorialUsuario';
 import { calcularResumenProgreso } from '@/services/analisisService';
+import { fechaLocal } from '@/services/datosService';
 import { calcularRequerimiento } from '@/utils/calculoNutricional';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Spacing, Layout, Radius } from '@/constants/Layout';
 
 export default function Inicio() {
-  const { correo, perfil } = useAuth();
-
-  // Vista previa con datos sinteticos del dataset (Anexo A del perfil).
-  const perfilActual = perfil ?? perfilesDemo[0];
-  const resumen = calcularResumenProgreso(perfilActual, registrosDemo);
+  const { correo } = useAuth();
+  const { perfilActual, registros } = useHistorialUsuario();
+  const resumen = calcularResumenProgreso(perfilActual, registros);
+  const registroHoy = registros.find((registro) => registro.fecha === fechaLocal());
   const requerimiento = calcularRequerimiento(perfilActual);
   const [entradaAsistente, setEntradaAsistente] = useState('');
   const [mensajesAsistente, setMensajesAsistente] = useState([
     { id: 'saludo', autor: 'asistente', texto: 'Hola. Soy tu asistente de VitalAI. Pregúntame sobre tu meta, alimentación o progreso.' },
   ]);
-  const caloriasRegistradas = 0;
-  const vasosAgua = 0;
+  const caloriasRegistradas = registroHoy?.caloriasConsumidas ?? 0;
+  const vasosAgua = registroHoy?.vasosAgua ?? 0;
 
   function preguntar(pregunta: string) {
     const texto = pregunta.toLowerCase();
     const restantes = requerimiento.caloriasObjetivo - caloriasRegistradas;
     let respuesta = `Tu meta de hoy es ${requerimiento.caloriasObjetivo} kcal. Te quedan aproximadamente ${restantes} kcal por registrar.`;
     if (texto.includes('prote') || texto.includes('musculo')) respuesta = `Para tu objetivo, tu referencia diaria es ${requerimiento.proteinasG} g de proteína. Distribúyela entre tus comidas con huevo, pollo, lenteja o quinua.`;
-    if (texto.includes('agua') || texto.includes('hidrat')) respuesta = `Aún no hay vasos registrados en el inicio. En Nutrición puedes llevar el control de tus 8 vasos diarios.`;
-    if (texto.includes('progreso') || texto.includes('peso')) respuesta = `Tu peso actual registrado es ${resumen.pesoActualKg} kg y tu adherencia demo es ${resumen.adherenciaPorcentaje}%.`;
+    if (texto.includes('agua') || texto.includes('hidrat')) respuesta = vasosAgua > 0 ? `Hoy llevas ${vasosAgua} de 8 vasos de agua. ${vasosAgua >= 8 ? '¡Meta cumplida!' : `Te faltan ${8 - vasosAgua}.`}` : `Aún no registras agua hoy. En Nutrición puedes llevar el control de tus 8 vasos diarios.`;
+    if (texto.includes('progreso') || texto.includes('peso')) respuesta = resumen.diasRegistrados > 0 ? `Tu peso actual registrado es ${resumen.pesoActualKg} kg y tu adherencia es ${resumen.adherenciaPorcentaje}% en ${resumen.diasRegistrados} días registrados.` : `Aún no tienes días registrados. Registra tus comidas en Nutrición y tu peso en Progreso.`;
     setMensajesAsistente((actuales) => [...actuales, { id: `${Date.now()}u`, autor: 'usuario', texto: pregunta }, { id: `${Date.now()}a`, autor: 'asistente', texto: respuesta }].slice(-5));
     setEntradaAsistente('');
   }
@@ -116,8 +116,8 @@ export default function Inicio() {
             color={Colors.info}
           />
           <Text style={styles.notaTexto}>
-            Datos demo del dataset de validacion. Puedes ampliar el seguimiento
-            desde las pestanas de nutricion, entreno y progreso.
+            Tus indicadores se calculan con lo que registras en Nutricion,
+            Entreno y Progreso. Registra cada dia para mejorar tus recomendaciones.
           </Text>
         </View>
       </ScrollView>

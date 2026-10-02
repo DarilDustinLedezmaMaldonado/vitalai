@@ -14,10 +14,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
+  updateProfile,
 } from 'firebase/auth';
 import { auth, firebaseConfigurado } from './firebase';
+import { guardarPerfil } from './datosService';
 import { CredencialesLogin, DatosRegistro, ResultadoAuth } from '@/types/auth';
 import { PerfilUsuario } from '@/types/dataset';
 
@@ -34,6 +37,9 @@ function traducirError(codigo: string): string {
     'auth/wrong-password': 'La contrasena es incorrecta.',
     'auth/invalid-credential': 'Correo o contrasena incorrectos.',
     'auth/too-many-requests': 'Demasiados intentos. Intenta mas tarde.',
+    'auth/network-request-failed': 'Sin conexion a internet. Revisa tu red.',
+    'auth/missing-email': 'Ingresa tu correo electronico.',
+    'permission-denied': 'Firestore rechazo la operacion. Revisa las reglas de seguridad.',
   };
   return mapa[codigo] ?? 'Ocurrio un error. Intenta nuevamente.';
 }
@@ -58,16 +64,19 @@ async function registroDemo(datos: DatosRegistro): Promise<ResultadoAuth> {
   if (usuarios.some((u) => u.correo === datos.correo.toLowerCase())) {
     return { exito: false, mensaje: 'Este correo ya esta registrado.' };
   }
+  const uid = `demo_${Date.now()}`;
+  const perfil = datos.perfil ? { ...datos.perfil, idUsuario: uid } : undefined;
   const nuevo: UsuarioDemo = {
-    uid: `demo_${Date.now()}`,
+    uid,
     nombre: datos.nombre,
     correo: datos.correo.toLowerCase(),
     password: datos.password,
-    perfil: datos.perfil,
+    perfil,
   };
   usuarios.push(nuevo);
   await AsyncStorage.setItem(CLAVE_USUARIOS_DEMO, JSON.stringify(usuarios));
   await AsyncStorage.setItem(CLAVE_SESION_DEMO, JSON.stringify(nuevo));
+  if (perfil) await guardarPerfil(uid, perfil);
   return { exito: true };
 }
 
@@ -90,8 +99,36 @@ export async function registrarUsuario(
 ): Promise<ResultadoAuth> {
   if (!firebaseConfigurado || !auth) return registroDemo(datos);
   try {
-    await createUserWithEmailAndPassword(auth, datos.correo, datos.password);
+    const { user } = await createUserWithEmailAndPassword(auth, datos.correo, datos.password);
+    await updateProfile(user, { displayName: datos.nombre });
+    // El perfil biometrico (Tabla 1 del dataset) se guarda en usuarios/{uid}.
+    if (datos.perfil) {
+      await guardarPerfil(user.uid, {
+        ...datos.perfil,
+        idUsuario: user.uid,
+        correo: (user.email ?? datos.correo).toLowerCase(),
+      });
+    }
     return { exito: true };
+  } catch (e: any) {
+    return { exito: false, mensaje: traducirError(e?.code ?? '') };
+  }
+}
+
+/** Envia el correo de restablecimiento de contrasena (solo modo Firebase). */
+export async function recuperarPassword(correo: string): Promise<ResultadoAuth> {
+  if (!firebaseConfigurado || !auth) {
+    return {
+      exito: false,
+      mensaje: 'La recuperacion por correo requiere Firebase. En modo demo crea una cuenta nueva.',
+    };
+  }
+  try {
+    await sendPasswordResetEmail(auth, correo.trim());
+    return {
+      exito: true,
+      mensaje: 'Te enviamos un correo para restablecer tu contrasena. Revisa tambien la carpeta de spam.',
+    };
   } catch (e: any) {
     return { exito: false, mensaje: traducirError(e?.code ?? '') };
   }

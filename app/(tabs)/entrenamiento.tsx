@@ -8,6 +8,15 @@ import { Tarjeta } from '@/components/Tarjeta';
 import Colors from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { Layout, Radius, Spacing } from '@/constants/Layout';
+import { useAuth } from '@/context/AuthContext';
+import { useDatoPersistente } from '@/hooks/useDatoPersistente';
+import {
+  guardarConfiguracion,
+  guardarSemanaEntrenamiento,
+  inicioSemana,
+  obtenerConfiguracion,
+  obtenerSemanaEntrenamiento,
+} from '@/services/datosService';
 
 interface Ejercicio {
   id: string;
@@ -37,16 +46,56 @@ const RUTINAS: Rutina[] = [
 ];
 
 const OPCIONES_OBJETIVO = ['Todos', 'Fuerza', 'Cardio', 'Movilidad'] as const;
+const CONFIG_ENTRENAMIENTO = 'entrenamiento';
+
+/** Avance de la semana en curso (usuarios/{uid}/entrenamientoSemanal/{lunes}). */
+interface AvanceSemana {
+  rutinasCompletadas: string[];
+  ejerciciosCompletados: string[];
+}
+
+/** Ejercicios y planes creados por el usuario (usuarios/{uid}/configuracion/entrenamiento). */
+interface Personalizados {
+  ejerciciosPersonalizados: Ejercicio[];
+  planesPersonalizados: PlanPersonalizado[];
+}
+
+const SEMANA_VACIA: AvanceSemana = { rutinasCompletadas: [], ejerciciosCompletados: [] };
+const SIN_PERSONALIZADOS: Personalizados = { ejerciciosPersonalizados: [], planesPersonalizados: [] };
 
 export default function Entrenamiento() {
-  const [rutinasCompletadas, setRutinasCompletadas] = useState<string[]>([]);
-  const [ejerciciosCompletados, setEjerciciosCompletados] = useState<string[]>([]);
+  const { uid } = useAuth();
+  const lunes = inicioSemana();
+  const semana = useDatoPersistente<AvanceSemana>(
+    uid ? `semana-${uid}-${lunes}` : null,
+    async () => {
+      const guardada = await obtenerSemanaEntrenamiento(uid!, lunes);
+      return { rutinasCompletadas: guardada.rutinasCompletadas, ejerciciosCompletados: guardada.ejerciciosCompletados };
+    },
+    (avance) => guardarSemanaEntrenamiento(uid!, avance, lunes),
+    SEMANA_VACIA
+  );
+  const personalizados = useDatoPersistente<Personalizados>(
+    uid ? `entreno-${uid}` : null,
+    async () => ({ ...SIN_PERSONALIZADOS, ...(await obtenerConfiguracion<Personalizados>(uid!, CONFIG_ENTRENAMIENTO)) }),
+    (datos) => guardarConfiguracion(uid!, CONFIG_ENTRENAMIENTO, datos),
+    SIN_PERSONALIZADOS
+  );
+  const { rutinasCompletadas, ejerciciosCompletados } = semana.valor;
+  const { ejerciciosPersonalizados, planesPersonalizados } = personalizados.valor;
+  const setRutinasCompletadas = (cambio: (actuales: string[]) => string[]) =>
+    semana.actualizar((actual) => ({ ...actual, rutinasCompletadas: cambio(actual.rutinasCompletadas) }));
+  const setEjerciciosCompletados = (cambio: (actuales: string[]) => string[]) =>
+    semana.actualizar((actual) => ({ ...actual, ejerciciosCompletados: cambio(actual.ejerciciosCompletados) }));
+  const setEjerciciosPersonalizados = (cambio: (actuales: Ejercicio[]) => Ejercicio[]) =>
+    personalizados.actualizar((actual) => ({ ...actual, ejerciciosPersonalizados: cambio(actual.ejerciciosPersonalizados) }));
+  const setPlanesPersonalizados = (cambio: (actuales: PlanPersonalizado[]) => PlanPersonalizado[]) =>
+    personalizados.actualizar((actual) => ({ ...actual, planesPersonalizados: cambio(actual.planesPersonalizados) }));
+  const errorGuardado = semana.error ?? personalizados.error;
   const [rutinaAbierta, setRutinaAbierta] = useState<string | null>(RUTINAS[0].id);
   const [objetivo, setObjetivo] = useState<(typeof OPCIONES_OBJETIVO)[number]>('Todos');
   const [temporizador, setTemporizador] = useState(0);
   const [temporizadorActivo, setTemporizadorActivo] = useState(false);
-  const [ejerciciosPersonalizados, setEjerciciosPersonalizados] = useState<Ejercicio[]>([]);
-  const [planesPersonalizados, setPlanesPersonalizados] = useState<PlanPersonalizado[]>([]);
   const [modal, setModal] = useState<'ejercicio' | 'plan' | null>(null);
   const [nombreEjercicio, setNombreEjercicio] = useState('');
   const [seriesEjercicio, setSeriesEjercicio] = useState('3');
@@ -114,6 +163,7 @@ export default function Entrenamiento() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.encabezado}>Mi entrenamiento</Text>
         <Text style={styles.subencabezado}>Planifica, ejecuta y registra cada sesión.</Text>
+        {errorGuardado ? <Text style={styles.estadoError}>{errorGuardado}</Text> : null}
 
         <Tarjeta estilo={styles.resumen}>
           <View style={styles.resumenIcono}><Ionicons name="fitness-outline" size={28} color={Colors.primary} /></View>
@@ -206,6 +256,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: Layout.screenPadding, paddingTop: Spacing.lg, paddingBottom: Spacing.xxl },
   encabezado: { ...Typography.title, color: Colors.textPrimary },
   subencabezado: { ...Typography.body, color: Colors.textSecondary, marginTop: Spacing.xs },
+  estadoError: { ...Typography.caption, color: Colors.danger, marginTop: Spacing.xs },
   resumen: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.xl, backgroundColor: Colors.surfaceAlt },
   resumenIcono: { width: 50, height: 50, borderRadius: Radius.md, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center' },
   resumenTexto: { flex: 1, marginLeft: Spacing.md },

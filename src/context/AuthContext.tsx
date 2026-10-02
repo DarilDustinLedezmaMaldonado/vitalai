@@ -12,10 +12,11 @@ import React, {
   useState,
   ReactNode,
 } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, firebaseConfigurado } from '@/services/firebase';
 import { obtenerSesionDemo, cerrarSesion } from '@/services/authService';
 import { actualizarPerfilDemo } from '@/services/authService';
+import { guardarPerfil, obtenerPerfil } from '@/services/datosService';
 import { EstadoAuth } from '@/types/auth';
 import { PerfilUsuario } from '@/types/dataset';
 
@@ -47,16 +48,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function cargarDemo() {
     const sesion = await obtenerSesionDemo();
     if (sesion) {
+      const perfilGuardado = await obtenerPerfil(sesion.uid).catch(() => null);
       setEstado({
         cargando: false,
         autenticado: true,
         uid: sesion.uid,
         correo: sesion.correo,
-        perfil: sesion.perfil ?? null,
+        perfil: perfilGuardado ?? sesion.perfil ?? null,
       });
     } else {
       setEstado({ ...estadoInicial, cargando: false });
     }
+  }
+
+  /** Carga el perfil del usuario de Firebase desde Firestore (usuarios/{uid}). */
+  async function cargarFirebase(user: User) {
+    let perfil = null;
+    try {
+      perfil = await obtenerPerfil(user.uid);
+    } catch (e) {
+      console.warn('[VitalAI] No se pudo leer el perfil de Firestore', e);
+    }
+    setEstado({
+      cargando: false,
+      autenticado: true,
+      uid: user.uid,
+      correo: user.email,
+      perfil,
+    });
   }
 
   useEffect(() => {
@@ -64,13 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Modo Firebase: escucha cambios de sesion en tiempo real.
       const unsub = onAuthStateChanged(auth, (user) => {
         if (user) {
-          setEstado({
-            cargando: false,
-            autenticado: true,
-            uid: user.uid,
-            correo: user.email,
-            perfil: null,
-          });
+          cargarFirebase(user);
         } else {
           setEstado({ ...estadoInicial, cargando: false });
         }
@@ -82,7 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refrescar = async () => {
-    if (!firebaseConfigurado) await cargarDemo();
+    if (!firebaseConfigurado) {
+      await cargarDemo();
+      return;
+    }
+    // Tras el registro, el perfil se guarda despues de crear la cuenta.
+    if (auth?.currentUser) await cargarFirebase(auth.currentUser);
   };
 
   const salir = async () => {
@@ -94,8 +112,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const actualizarPerfil = async (perfil: PerfilUsuario) => {
-    if (!firebaseConfigurado) await actualizarPerfilDemo(perfil);
-    setEstado((actual) => ({ ...actual, perfil }));
+    const uid = estado.uid ?? perfil.idUsuario;
+    const perfilFinal: PerfilUsuario = {
+      ...perfil,
+      idUsuario: uid,
+      correo: estado.correo ?? perfil.correo,
+    };
+    await guardarPerfil(uid, perfilFinal);
+    if (!firebaseConfigurado) await actualizarPerfilDemo(perfilFinal);
+    setEstado((actual) => ({ ...actual, perfil: perfilFinal }));
   };
 
   return (
