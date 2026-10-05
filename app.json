@@ -47,6 +47,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#0E8C7A"
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "VitalAI usa el micrófono para que puedas hablarle a tu coach y registrar tus comidas por voz."
+        }
       ]
     ],
     "experiments": {

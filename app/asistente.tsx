@@ -4,6 +4,10 @@
  * Chat con el coach: entiende lenguaje natural para registrar comidas, agua y
  * peso, responde sobre el dia y recalcula el plan. Usa Gemini (Firebase AI
  * Logic) cuando esta disponible y respuestas basicas sin IA en caso contrario.
+ *
+ * Modo voz (manos libres): el coach escucha, responde en voz alta y vuelve a
+ * escuchar, hasta que el usuario deja de hablar o toca "Terminar". Se abre
+ * directo con el enlace vitalai://asistente?voz=1.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -29,11 +33,16 @@ import { AccionRealizada, ContextoAsistente } from '@/services/asistente/herrami
 import {
   asistenteIADisponible,
   crearSesion,
+  EntradaVoz,
   enviarMensaje,
   mensajeDeError,
   SesionAsistente,
 } from '@/services/asistente/geminiService';
 import { respuestaLocal } from '@/services/asistente/respuestaLocal';
+import { callar, hablar } from '@/services/asistente/voz';
+import { AudioVoz, useEscuchaVoz } from '@/hooks/useEscuchaVoz';
+import { FaseVoz, PanelVoz } from '@/components/PanelVoz';
+import { hapticaSeleccion } from '@/utils/haptica';
 import { calcularRequerimiento } from '@/utils/calculoNutricional';
 import { useTema } from '@/context/TemaContext';
 import { crearEstilos } from '@/constants/estilos';
@@ -47,6 +56,8 @@ interface Mensaje {
   texto: string;
   acciones?: AccionRealizada[];
   error?: boolean;
+  /** Mensaje hablado: se muestra como nota de voz. */
+  voz?: boolean;
 }
 
 const SUGERENCIAS = [
@@ -67,7 +78,7 @@ const ICONO_ACCION: Record<AccionRealizada['tipo'], keyof typeof Ionicons.glyphM
 export default function Asistente() {
   useTema(); // se vuelve a dibujar al cambiar la paleta
   const router = useRouter();
-  const { q } = useLocalSearchParams<{ q?: string }>();
+  const { q, voz } = useLocalSearchParams<{ q?: string; voz?: string }>();
   const { uid, perfil } = useAuth();
   const [consentimiento, setConsentimiento] = useState<boolean | null>(asistenteIADisponible ? null : true);
   const [contexto, setContexto] = useState<ContextoAsistente | null>(null);
@@ -83,6 +94,11 @@ export default function Asistente() {
   const sesion = useRef<SesionAsistente | null>(null);
   const scroll = useRef<ScrollView>(null);
   const preguntaInicialEnviada = useRef(false);
+  const escucha = useEscuchaVoz();
+  const [faseVoz, setFaseVoz] = useState<FaseVoz | null>(null);
+  /** Sigue en modo voz: se consulta dentro del ciclo escuchar-responder. */
+  const modoVoz = useRef(false);
+  const vozInicialLanzada = useRef(false);
 
   // Consentimiento para enviar datos a la IA (usuarios/{uid}/configuracion/asistente).
   useEffect(() => {
@@ -116,26 +132,47 @@ export default function Asistente() {
     }
   }, [listo, q]);
 
+  // Abierto con ?voz=1 (por ejemplo desde un atajo): empieza escuchando.
+  useEffect(() => {
+    if (listo && voz === '1' && asistenteIADisponible && !vozInicialLanzada.current) {
+      vozInicialLanzada.current = true;
+      conversarPorVoz();
+    }
+  }, [listo, voz]);
+
+  // Al salir de la pantalla se corta la voz.
+  useEffect(() => () => { modoVoz.current = false; callar(); }, []);
+
   async function aceptarConsentimiento() {
     if (!uid) return;
     setConsentimiento(true);
     await guardarConfiguracion(uid, 'asistente', { consentimientoIA: new Date().toISOString() }).catch(() => undefined);
   }
 
+  function agregar(mensaje: Omit<Mensaje, 'id'>) {
+    setMensajes((actuales) => [...actuales, { ...mensaje, id: `${Date.now()}${actuales.length}` }]);
+  }
+
   async function enviar(texto: string) {
     const limpio = texto.trim();
     if (!limpio || pensando || !contexto) return;
     setEntrada('');
-    setMensajes((actuales) => [...actuales, { id: `${Date.now()}u`, autor: 'usuario', texto: limpio }]);
+    agregar({ autor: 'usuario', texto: limpio });
+    await responder(limpio);
+  }
+
+  /** Pide la respuesta al coach (texto o audio) y la agrega al chat. */
+  async function responder(entradaUsuario: string | EntradaVoz): Promise<Mensaje | null> {
+    if (!contexto) return null;
     setPensando(true);
     let respuesta: Mensaje;
     try {
       if (asistenteIADisponible) {
         sesion.current ??= crearSesion(contexto);
-        const r = await enviarMensaje(sesion.current, limpio);
+        const r = await enviarMensaje(sesion.current, entradaUsuario);
         respuesta = { id: `${Date.now()}a`, autor: 'asistente', texto: r.texto, acciones: r.acciones };
       } else {
-        const r = await respuestaLocal(limpio, contexto);
+        const r = await respuestaLocal(String(entradaUsuario), contexto);
         respuesta = { id: `${Date.now()}a`, autor: 'asistente', texto: r.texto };
       }
     } catch (e) {
@@ -147,6 +184,49 @@ export default function Asistente() {
       setPensando(false);
     }
     setMensajes((actuales) => [...actuales, respuesta]);
+    return respuesta;
+  }
+
+  /**
+   * Conversacion manos libres: escuchar -> responder -> leer en voz alta ->
+   * volver a escuchar. Termina si el usuario no habla, toca "Terminar" o
+   * hay un error.
+   */
+  async function conversarPorVoz() {
+    if (!listo || pensando || modoVoz.current) return;
+    modoVoz.current = true;
+    hapticaSeleccion();
+    callar();
+    while (modoVoz.current) {
+      setFaseVoz('escuchando');
+      const r = await escucha.escuchar();
+      if (!modoVoz.current) break;
+      if ('motivo' in r) {
+        if (r.motivo === 'sin-permiso') {
+          agregar({ autor: 'asistente', texto: 'Necesito permiso para usar el micrófono. Actívalo en los ajustes del teléfono para hablarme.', error: true });
+        } else if (r.motivo === 'error') {
+          agregar({ autor: 'asistente', texto: 'No pude usar el micrófono. Intenta de nuevo.', error: true });
+        }
+        break;
+      }
+      const audio: AudioVoz = r.audio;
+      agregar({ autor: 'usuario', texto: `Mensaje de voz · ${Math.max(1, Math.round(audio.duracionMs / 1000))} s`, voz: true });
+      setFaseVoz('pensando');
+      const respuesta = await responder({ base64: audio.base64, mimeType: audio.mimeType });
+      if (!modoVoz.current || !respuesta) break;
+      setFaseVoz('hablando');
+      await hablar(respuesta.texto);
+      if (respuesta.error) break;
+    }
+    modoVoz.current = false;
+    setFaseVoz(null);
+  }
+
+  function terminarVoz() {
+    modoVoz.current = false;
+    escucha.cancelar();
+    callar();
+    setFaseVoz(null);
   }
 
   return (
@@ -191,7 +271,14 @@ export default function Asistente() {
           >
             {mensajes.map((m) => (
               <View key={m.id} style={[styles.burbuja, m.autor === 'usuario' ? styles.burbujaUsuario : styles.burbujaAsistente, m.error && styles.burbujaError]}>
-                <Text style={[styles.burbujaTexto, m.autor === 'usuario' && styles.burbujaTextoUsuario]}>{m.texto}</Text>
+                {m.voz ? (
+                  <View style={styles.notaVoz}>
+                    <Ionicons name="mic" size={16} color={Colors.textOnPrimary} />
+                    <Text style={[styles.burbujaTexto, styles.burbujaTextoUsuario]}>{m.texto}</Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.burbujaTexto, m.autor === 'usuario' && styles.burbujaTextoUsuario]}>{m.texto}</Text>
+                )}
                 {m.acciones?.map((accion, i) => (
                   <View key={i} style={styles.accion}>
                     <Ionicons name={ICONO_ACCION[accion.tipo]} size={14} color={Colors.success} />
@@ -200,7 +287,7 @@ export default function Asistente() {
                 ))}
               </View>
             ))}
-            {pensando && (
+            {pensando && !faseVoz && (
               <View style={[styles.burbuja, styles.burbujaAsistente, styles.pensando]}>
                 <ActivityIndicator size="small" color={Colors.primary} />
                 <Text style={styles.pensandoTexto}>Pensando...</Text>
@@ -209,6 +296,9 @@ export default function Asistente() {
             {!listo && <ActivityIndicator style={styles.cargando} color={Colors.primary} />}
           </ScrollView>
 
+          {faseVoz ? (
+            <PanelVoz fase={faseVoz} nivel={escucha.nivel} onListo={escucha.enviarYa} onTerminar={terminarVoz} />
+          ) : (<>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sugerenciasFila} contentContainerStyle={styles.sugerencias} keyboardShouldPersistTaps="handled">
             {SUGERENCIAS.map((s) => (
               <Pressable key={s} onPress={() => enviar(s)} style={styles.sugerencia} disabled={!listo || pensando}>
@@ -228,16 +318,29 @@ export default function Asistente() {
               editable={listo}
               returnKeyType="send"
             />
-            <Pressable
-              onPress={() => enviar(entrada)}
-              disabled={!listo || pensando || !entrada.trim()}
-              style={[styles.enviar, (!listo || pensando || !entrada.trim()) && styles.enviarInactivo]}
-              accessibilityRole="button"
-              accessibilityLabel="Enviar mensaje"
-            >
-              <Ionicons name="send" size={18} color={Colors.textOnPrimary} />
-            </Pressable>
+            {asistenteIADisponible && !entrada.trim() ? (
+              <Pressable
+                onPress={conversarPorVoz}
+                disabled={!listo || pensando}
+                style={[styles.enviar, (!listo || pensando) && styles.enviarInactivo]}
+                accessibilityRole="button"
+                accessibilityLabel="Hablar con el coach"
+              >
+                <Ionicons name="mic" size={20} color={Colors.textOnPrimary} />
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => enviar(entrada)}
+                disabled={!listo || pensando || !entrada.trim()}
+                style={[styles.enviar, (!listo || pensando || !entrada.trim()) && styles.enviarInactivo]}
+                accessibilityRole="button"
+                accessibilityLabel="Enviar mensaje"
+              >
+                <Ionicons name="send" size={18} color={Colors.textOnPrimary} />
+              </Pressable>
+            )}
           </View>
+          </>)}
         </KeyboardAvoidingView>
       )}
     </SafeAreaView>
@@ -259,6 +362,7 @@ const styles = crearEstilos(() => StyleSheet.create({
   burbujaError: { borderColor: Colors.danger },
   burbujaTexto: { ...Typography.body, color: Colors.textPrimary },
   burbujaTextoUsuario: { color: Colors.textOnPrimary },
+  notaVoz: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
   accion: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: Spacing.xs },
   accionTexto: { ...Typography.caption, color: Colors.success, flex: 1 },
   pensando: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },

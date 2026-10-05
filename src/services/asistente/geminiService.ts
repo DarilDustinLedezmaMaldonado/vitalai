@@ -37,6 +37,15 @@ import {
 import { construirInstrucciones } from './instrucciones';
 import { LlamadaEjecutada, redactarRespuesta } from './redaccion';
 
+/** Mensaje hablado: Gemini entiende el audio directamente (sin transcripcion aparte). */
+export interface EntradaVoz {
+  base64: string;
+  mimeType: string;
+}
+
+/** Indicacion que acompana al audio: la respuesta se leera en voz alta. */
+const INDICACION_VOZ = '(Mensaje de voz del usuario. Si respondes con texto, usa como máximo 2 frases cortas: se leerá en voz alta.)';
+
 /**
  * Cadena de modelos, del preferido al ultimo recurso. Medido el 2026-10-02:
  * gemini-3.5-flash ~4-6 s, flash-lite ~2-4 s, gemini-3.8-flash muy saturado.
@@ -137,9 +146,12 @@ function recortar(historial: Content[]): Content[] {
 
 export async function enviarMensaje(
   sesion: SesionAsistente,
-  texto: string
+  entrada: string | EntradaVoz
 ): Promise<RespuestaAsistente> {
-  const turnoUsuario: Content = { role: 'user', parts: [...sesion.pendientes, { text: texto }] };
+  const partes: Part[] = typeof entrada === 'string'
+    ? [{ text: entrada }]
+    : [{ inlineData: { mimeType: entrada.mimeType, data: entrada.base64 } }, { text: INDICACION_VOZ }];
+  const turnoUsuario: Content = { role: 'user', parts: [...sesion.pendientes, ...partes] };
   const contents = [...sesion.historial, turnoUsuario];
   const resultado = await generar(sesion, contents);
 
