@@ -7,12 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "vitalai",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0E8C7A"
-    },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ledezma.vitalai"
@@ -23,7 +20,11 @@
         "backgroundColor": "#0E8C7A"
       },
       "package": "com.ledezma.vitalai",
-      "permissions": ["CAMERA", "RECORD_AUDIO", "ACTIVITY_RECOGNITION"]
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACTIVITY_RECOGNITION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -35,6 +36,16 @@
         "expo-camera",
         {
           "cameraPermission": "VitalAI necesita acceso a la camara para futuras funciones."
+        }
+      ],
+      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0E8C7A"
         }
       ]
     ],

@@ -70,7 +70,7 @@ export default function AnilloProgreso({
 
 const styles = crearEstilos(() => StyleSheet.create({
   centro: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
