@@ -34,3 +34,7 @@ firebaseConfig.local.ts
 
 # typescript
 *.tsbuildinfo
+
+# Proyectos nativos generados por expo prebuild
+/android
+/ios
