@@ -7,11 +7,17 @@
  * falta un servicio aparte de transcripcion y se gasta una sola consulta.
  *
  * Deteccion de silencio: con el nivel de entrada (metering, en dBFS) se mide
- * el ruido de fondo los primeros instantes; se considera voz lo que lo supera
- * claramente. Tras hablar, ~1,5 s por debajo del umbral cierran la grabacion.
+ * el ruido de fondo los primeros instantes y luego se sigue adaptando (baja
+ * rapido y sube lento: un ruido constante como un ventilador o la licuadora
+ * pasa a ser "fondo", la voz no porque tiene pausas). Se considera voz lo que
+ * supera claramente ese fondo. Tras hablar, ~1,5 s de silencio cierran.
+ *
+ * El volumen se publica en valores compartidos de Reanimated (no en estado de
+ * React): la animacion reacciona a cada sonido sin volver a dibujar el chat.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SharedValue, useSharedValue, withSpring } from 'react-native-reanimated';
 import {
   AudioQuality,
   IOSOutputFormat,
@@ -19,7 +25,6 @@ import {
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   useAudioRecorder,
-  useAudioRecorderState,
 } from 'expo-audio';
 import { File } from 'expo-file-system';
 
@@ -48,11 +53,19 @@ const OPCIONES: RecordingOptions = {
 
 const MIME = { '.aac': 'audio/aac', '.m4a': 'audio/mp4', '.webm': 'audio/webm' } as const;
 
-const INTERVALO_MS = 100;
+/** Lectura del volumen: rapida para que la animacion siga cada sonido. */
+const INTERVALO_MS = 50;
+/** Rango (dB sobre el ruido de fondo) que va de 0 a 1 en la animacion. */
+const RANGO_NIVEL_DB = 28;
 /** Tiempo inicial para medir el ruido de fondo. */
 const CALIBRACION_MS = 400;
 /** Cuanto debe superar la voz al ruido de fondo (dB). */
 const MARGEN_VOZ_DB = 10;
+/** Lecturas por debajo de esto son "sin dato" (el microfono aun no arranca). */
+const SIN_DATO_DB = -100;
+/** Adaptacion del fondo por lectura: baja rapido, sube lento (~5 s). */
+const BAJADA_FONDO = 0.5;
+const SUBIDA_FONDO = 0.01;
 /** Umbral minimo: en una cocina silenciosa evita tomar susurros como voz. */
 const UMBRAL_MINIMO_DB = -50;
 const SILENCIO_FINAL_MS = 1500;
@@ -60,17 +73,30 @@ const SILENCIO_FINAL_MS = 1500;
 const ESPERA_MAXIMA_MS = 7000;
 const DURACION_MAXIMA_MS = 30000;
 
-type Resultado = { audio: AudioVoz } | { motivo: FinSinAudio };
+export type Resultado = { audio: AudioVoz } | { motivo: FinSinAudio };
 
-export function useEscuchaVoz() {
+export interface EscuchaVoz {
+  estado: EstadoEscucha;
+  /** Volumen de la voz entre 0 y 1 (suavizado). */
+  nivel: SharedValue<number>;
+  /** Cambia en cada lectura: da variacion a las barras. */
+  pulso: SharedValue<number>;
+  escuchar: () => Promise<Resultado>;
+  enviarYa: () => void;
+  cancelar: () => void;
+}
+
+export function useEscuchaVoz(): EscuchaVoz {
   const grabadora = useAudioRecorder(OPCIONES);
-  const estadoGrabadora = useAudioRecorderState(grabadora, INTERVALO_MS);
   const [estado, setEstado] = useState<EstadoEscucha>('inactivo');
-  const [nivel, setNivel] = useState(0);
+  const nivel = useSharedValue(0);
+  const pulso = useSharedValue(0);
 
   const resolver = useRef<((r: Resultado) => void) | null>(null);
   const medicion = useRef({ inicio: 0, muestrasPiso: [] as number[], piso: -60, hablo: false, ultimaVoz: 0 });
   const terminando = useRef(false);
+  /** Al desmontar, la grabadora nativa ya se libero: no se la toca. */
+  const desmontado = useRef(false);
 
   const terminar = useCallback(async (enviar: boolean, motivo: FinSinAudio = 'cancelado') => {
     if (terminando.current || !resolver.current) return;
@@ -79,6 +105,11 @@ export function useEscuchaVoz() {
     resolver.current = null;
     const duracionMs = Date.now() - medicion.current.inicio;
     let resultado: Resultado = { motivo };
+    if (desmontado.current) {
+      terminando.current = false;
+      resolverActual(resultado);
+      return;
+    }
     try {
       await grabadora.stop();
       const uri = grabadora.uri;
@@ -94,39 +125,48 @@ export function useEscuchaVoz() {
     } finally {
       await setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
       setEstado('inactivo');
-      setNivel(0);
+      nivel.value = withSpring(0);
       terminando.current = false;
       resolverActual(resultado);
     }
-  }, [grabadora]);
+  }, [grabadora, nivel]);
 
-  // Analiza el nivel de entrada en cada lectura del estado de la grabadora.
+  // Lee el volumen mientras escucha: anima y detecta el final de la frase.
   useEffect(() => {
-    if (estado !== 'escuchando' || !estadoGrabadora.isRecording) return;
-    const db = estadoGrabadora.metering ?? -160;
-    const m = medicion.current;
-    const ahora = Date.now();
-    const transcurrido = ahora - m.inicio;
+    if (estado !== 'escuchando') return;
+    const intervalo = setInterval(() => {
+      const lectura = grabadora.getStatus();
+      if (!lectura.isRecording) return;
+      const db = lectura.metering ?? -160;
+      if (db <= SIN_DATO_DB) return;
+      const m = medicion.current;
+      const ahora = Date.now();
+      const transcurrido = ahora - m.inicio;
 
-    if (transcurrido < CALIBRACION_MS) {
-      m.muestrasPiso.push(db);
-      return;
-    }
-    if (m.muestrasPiso.length) {
-      m.piso = m.muestrasPiso.reduce((a, b) => a + b, 0) / m.muestrasPiso.length;
-      m.muestrasPiso = [];
-    }
-    const umbral = Math.max(UMBRAL_MINIMO_DB, m.piso + MARGEN_VOZ_DB);
-    setNivel(Math.min(1, Math.max(0, (db - m.piso) / 30)));
+      if (transcurrido < CALIBRACION_MS || m.muestrasPiso.length < 3) {
+        m.muestrasPiso.push(db);
+        m.piso = m.muestrasPiso.reduce((a, b) => a + b, 0) / m.muestrasPiso.length;
+      } else {
+        m.muestrasPiso.length = 3;
+        m.piso += (db - m.piso) * (db < m.piso ? BAJADA_FONDO : SUBIDA_FONDO);
+      }
+      // Cualquier sonido sobre el ruido de fondo mueve la animacion.
+      const relativo = Math.min(1, Math.max(0, (db - m.piso - 2) / RANGO_NIVEL_DB));
+      nivel.value = withSpring(relativo, { damping: 14, stiffness: 260, mass: 0.6 });
+      pulso.value = pulso.value + 1;
+      if (transcurrido < CALIBRACION_MS || m.muestrasPiso.length < 3) return;
 
-    if (db > umbral) {
-      m.hablo = true;
-      m.ultimaVoz = ahora;
-    }
-    if (m.hablo && ahora - m.ultimaVoz > SILENCIO_FINAL_MS) terminar(true);
-    else if (!m.hablo && transcurrido > ESPERA_MAXIMA_MS) terminar(false, 'sin-voz');
-    else if (transcurrido > DURACION_MAXIMA_MS) terminar(true);
-  }, [estadoGrabadora, estado, terminar]);
+      const umbral = Math.max(UMBRAL_MINIMO_DB, m.piso + MARGEN_VOZ_DB);
+      if (db > umbral) {
+        m.hablo = true;
+        m.ultimaVoz = ahora;
+      }
+      if (m.hablo && ahora - m.ultimaVoz > SILENCIO_FINAL_MS) terminar(true);
+      else if (!m.hablo && transcurrido > ESPERA_MAXIMA_MS) terminar(false, 'sin-voz');
+      else if (transcurrido > DURACION_MAXIMA_MS) terminar(true);
+    }, INTERVALO_MS);
+    return () => clearInterval(intervalo);
+  }, [estado, grabadora, terminar, nivel, pulso]);
 
   /** Empieza a escuchar; se resuelve con el audio cuando el usuario calla. */
   const escuchar = useCallback(async (): Promise<Resultado> => {
@@ -152,7 +192,13 @@ export function useEscuchaVoz() {
   const cancelar = useCallback(() => terminar(false, 'cancelado'), [terminar]);
 
   // Al salir de la pantalla no debe quedar el microfono abierto.
-  useEffect(() => () => { if (resolver.current) terminar(false, 'cancelado'); }, [terminar]);
+  useEffect(() => {
+    desmontado.current = false;
+    return () => {
+      desmontado.current = true;
+      if (resolver.current) terminar(false, 'cancelado');
+    };
+  }, [terminar]);
 
-  return { estado, nivel, escuchar, enviarYa, cancelar };
+  return { estado, nivel, pulso, escuchar, enviarYa, cancelar };
 }

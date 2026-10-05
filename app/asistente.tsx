@@ -123,6 +123,7 @@ export default function Asistente() {
   }, [uid, perfil]);
 
   const listo = contexto !== null && consentimiento === true;
+  const ultimaRespuesta = [...mensajes].reverse().find((m) => m.autor === 'asistente')?.texto;
 
   // Pregunta enviada desde Inicio (?q=...).
   useEffect(() => {
@@ -296,9 +297,6 @@ export default function Asistente() {
             {!listo && <ActivityIndicator style={styles.cargando} color={Colors.primary} />}
           </ScrollView>
 
-          {faseVoz ? (
-            <PanelVoz fase={faseVoz} nivel={escucha.nivel} onListo={escucha.enviarYa} onTerminar={terminarVoz} />
-          ) : (<>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sugerenciasFila} contentContainerStyle={styles.sugerencias} keyboardShouldPersistTaps="handled">
             {SUGERENCIAS.map((s) => (
               <Pressable key={s} onPress={() => enviar(s)} style={styles.sugerencia} disabled={!listo || pensando}>
@@ -340,8 +338,18 @@ export default function Asistente() {
               </Pressable>
             )}
           </View>
-          </>)}
         </KeyboardAvoidingView>
+      )}
+
+      {faseVoz && (
+        <PanelVoz
+          fase={faseVoz}
+          nivel={escucha.nivel}
+          pulso={escucha.pulso}
+          respuesta={ultimaRespuesta}
+          onListo={escucha.enviarYa}
+          onTerminar={terminarVoz}
+        />
       )}
     </SafeAreaView>
   );
@@ -373,7 +381,7 @@ const styles = crearEstilos(() => StyleSheet.create({
   sugerencia: { borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, backgroundColor: Colors.surface, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs },
   sugerenciaTexto: { ...Typography.caption, color: Colors.textSecondary },
   entradaFila: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingHorizontal: Layout.screenPadding, paddingVertical: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.divider, backgroundColor: Colors.surface },
-  entrada: { flex: 1, minWidth: 0, height: 44, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, paddingHorizontal: Spacing.md, color: Colors.textPrimary, ...Typography.body },
+  entrada: { flex: 1, minWidth: 0, height: 44, borderWidth: 1, borderColor: Colors.border, borderRadius: Radius.pill, paddingHorizontal: Spacing.md, color: Colors.textPrimary, ...Typography.body, lineHeight: undefined, paddingVertical: 0, textAlignVertical: 'center', includeFontPadding: false },
   enviar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
   enviarInactivo: { opacity: 0.5 },
   consentimiento: { padding: Layout.screenPadding, alignItems: 'center', gap: Spacing.md, paddingTop: Spacing.xxl },
