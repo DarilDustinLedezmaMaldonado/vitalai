@@ -52,8 +52,8 @@ consumo calórico** en el contexto boliviano.
 | OE2 | Estructurar un **dataset** con registros biométricos e históricos para entrenar y validar los algoritmos de nutrición adaptativa | 🟡 | Tablas 1 y 2 se guardan con datos reales en `usuarios/{uid}` y `registrosDiarios`; falta exportarlo (CSV) y recolectar datos de los participantes |
 | OE3 | Módulo de **nutrición adaptativa con IA** que genere y **recalcule** planes alimenticios según la disponibilidad del usuario | 🟡 | Meta Mifflin-St Jeor + macros, plan de comidas y **recálculo por ingrediente faltante** con justificación educativa (`utils/sustitucion.ts`). Falta un modelo de IA entrenado con el dataset |
 | OE4 | Módulo de **reconocimiento de imágenes** (visión por computadora) para identificar alimentos por foto y calcular calorías | ❌ | `expo-camera` y `expo-image-picker` instalados pero sin uso; falta el modelo (TensorFlow Lite / CNN) |
-| OE5 | Módulo de **planificación de entrenamiento** con control de cargas y visualización del progreso temporal | 🟡 | Rutinas, ejercicios y planes personalizados y temporizador de descanso; falta registrar cargas y peso por sesión y el historial semanal |
-| OE6 | Módulo de **asistencia de voz proactiva** con NLP para motivar y reducir la omisión de registros | 🟡 | Coach conversacional con Gemini (Firebase AI Logic): registra comidas, agua y peso en lenguaje natural y recalcula el día (`services/asistente/`). Falta la voz (fase 2) y los recordatorios proactivos |
+| OE5 | Módulo de **planificación de entrenamiento** con control de cargas y visualización del progreso temporal | ✅ | Rutinas, planes personalizados, temporizador de descanso, **registro de carga y repeticiones por serie**, volumen por sesión, **historial de 6 semanas** comparado con la anterior y **sugerencia de sobrecarga progresiva** (`utils/entrenamiento.ts`). Faltan guías visuales de ejecución |
+| OE6 | Módulo de **asistencia de voz proactiva** con NLP para motivar y reducir la omisión de registros | 🟡 | Coach conversacional con Gemini (Firebase AI Logic): registra comidas, agua y peso en lenguaje natural y recalcula el día (`services/asistente/`). **Voz manos libres** con detección de silencio y respuesta hablada. Faltan los recordatorios proactivos y las felicitaciones por hitos |
 | OE7 | Módulo de **integración pasiva** con ecosistemas de salud externos (actividad física automática) | ❌ | Google Fit no integrado |
 | OE8 | **Interfaz intuitiva** con visión clara del avance hacia los objetivos de composición corporal | ✅ | Tema, navegación por pestañas y pantallas de Inicio y Progreso |
 | OE9 | Módulo de **análisis de datos** y métricas de rendimiento para decisiones de estilo de vida | 🟡 | Inicio y Progreso usan el historial real (peso, adherencia, calorías, hábitos); faltan reportes semanales, predicción y notificaciones |
@@ -96,17 +96,19 @@ consumo calórico** en el contexto boliviano.
 ### 4.3 Módulo de planificación de entrenamiento (perfil §5.3)
 
 - [x] **Rutinas semanales** por grupo muscular o nivel de intensidad
-- [ ] Registro de **cargas, repeticiones y volumen total** por sesión
-- [~] **Historial de entrenamiento** comparando con semanas anteriores (sobrecarga progresiva)
-      *(el avance ya se guarda por semana; falta la vista comparativa y las cargas)*
+- [x] Registro de **cargas, repeticiones y volumen total** por sesión
+      *(botón de pesa en cada ejercicio; también admite ejercicios por tiempo y con peso corporal)*
+- [x] **Historial de entrenamiento** comparando con semanas anteriores (sobrecarga progresiva)
+      *(barras de volumen de las últimas 6 semanas, variación frente a la anterior, mejor carga por
+      ejercicio y sugerencia para la próxima sesión con su justificación educativa)*
 - [~] **Cronómetro integrado** *(temporizador de descanso hecho)* y **guías visuales**
       de ejecución de ejercicios *(pendiente)*
 
 ### 4.4 Módulo de asistente de voz y motivación (perfil §5.4)
 
 - [ ] **Saludos personalizados y recordatorios proactivos** por **síntesis de voz**
-- [~] **Interacción conversacional** para registrar comidas o pesajes *(por texto ya
-      funciona con Gemini y herramientas; la voz llega en la fase 2)*
+- [x] **Interacción conversacional** para registrar comidas o pesajes *(por texto y por
+      voz manos libres, con Gemini y herramientas)*
 - [ ] **Retroalimentación positiva** y felicitaciones automáticas al cumplir hitos diarios o semanales
 - [ ] **Alertas de voz** de hidratación y de meta de pasos diarios
 - Tecnología comprometida (§7.1.4 y §7.1.10): **OpenAI Whisper** (transcripción) +
@@ -248,13 +250,13 @@ Ordenadas por peso en el perfil (cada objetivo específico se evalúa) y por esf
 2. ~~**Recuperación de contraseña**~~ ✅ Hecho. Falta una pantalla de **privacidad** para cerrar el OE1.
 3. ~~**Recálculo del plan** por ingrediente no disponible~~ ✅ Hecho (2026-10-02).
    Alimentos bolivianos: 10 agregados; faltan **recetas típicas** (OE3).
-4. **Entrenamiento:** registro de carga, repeticiones y volumen por sesión, más un
-   historial semanal (OE5).
+4. ~~**Entrenamiento:** registro de carga, repeticiones y volumen por sesión, más un
+   historial semanal (OE5).~~ ✅ Hecho (2026-10-05).
 5. **Reconocimiento de alimentos por foto** con TensorFlow Lite (OE4). Requiere un
    development build.
 6. **Google Fit:** pasos, distancia y calorías integrados al balance diario (OE7).
-7. **Asistente de voz:** como mínimo, síntesis de voz para recordatorios y
-   felicitaciones (`expo-speech`) y reconocimiento de voz para registrar (OE6).
+7. **Asistente de voz:** ~~reconocimiento de voz para registrar~~ ✅ hecho; falta la
+   síntesis de voz para recordatorios y felicitaciones proactivas (OE6).
 8. **Análisis:** reporte semanal, calendario predictivo y notificaciones (`expo-notifications`) (OE9).
 9. **Pruebas:** Jest para `calculoNutricional`, `validaciones` y `analisisService`,
    más las encuestas y la guía de observación con los 70 participantes.

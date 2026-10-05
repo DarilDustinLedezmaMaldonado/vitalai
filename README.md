@@ -37,7 +37,7 @@ externas y permite recorrer el flujo principal de seguimiento:
 | Dashboard de inicio (vista previa) | Completo |
 | Modulo de nutricion adaptativa con IA | Recalculo por ingrediente faltante; falta modelo IA |
 | Cuestionario inicial y perfil nutricional | Completo en modo demo |
-| Modulo de planificacion de entrenamiento | Completo en modo demo |
+| Modulo de planificacion de entrenamiento | Completo (con control de cargas e historial semanal) |
 | Seguimiento de progreso y habitos | Completo en modo demo |
 | Modulo de asistente de voz (NLP) | Fase posterior |
 | Modulo de integracion pasiva (Google Fit) | Fase posterior |
@@ -125,7 +125,7 @@ Firebase son documentos de Firestore; en modo demo se guardan en el celular.
 |---|---|
 | `usuarios/{uid}` | Perfil biometrico (Tabla 1 del dataset, `PerfilUsuario`) |
 | `usuarios/{uid}/registrosDiarios/{YYYY-MM-DD}` | Registro del dia (Tabla 2, `RegistroDiario`): calorias, macros, agua, peso, cumplimiento, alimentos y comidas marcadas |
-| `usuarios/{uid}/entrenamientoSemanal/{lunes}` | Rutinas y ejercicios completados en la semana |
+| `usuarios/{uid}/entrenamientoSemanal/{lunes}` | Rutinas y ejercicios completados en la semana, y cada serie (carga, repeticiones o tiempo, fecha) |
 | `usuarios/{uid}/configuracion/nutricion` | Plan de comidas personalizado |
 | `usuarios/{uid}/configuracion/entrenamiento` | Ejercicios y planes de entrenamiento personalizados |
 
@@ -189,6 +189,16 @@ gemini-3.5-flash -> gemini-3.5-flash-lite -> gemini-3.8-flash.
 Requisitos en Firebase Console: **AI Logic -> Get started -> Gemini Developer API**
 (capa gratuita, sin tarjeta). El modelo se cambia en `app.json -> extra.geminiModelo`.
 Sin Firebase o sin conexion, el coach responde consultas basicas sin IA.
+
+### Control de cargas y sobrecarga progresiva
+
+En cada ejercicio, el boton de pesa abre el registro de series: carga (kg) y
+repeticiones, o segundos/minutos en los ejercicios por tiempo. Se precarga con
+una sugerencia basada en la ultima sesion (`src/utils/entrenamiento.ts`): si se
+completaron todas las repeticiones objetivo sube 2,5 kg (1 kg con cargas menores
+a 20 kg); si no, mantiene la carga; con peso corporal suma repeticiones. El
+**historial semanal** muestra el volumen de carga (kg x repeticiones) de las
+ultimas 6 semanas, la variacion frente a la anterior y la mejor carga por ejercicio.
 
 ### Modo demo forzado
 

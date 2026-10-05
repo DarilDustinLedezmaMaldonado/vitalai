@@ -8,7 +8,7 @@
  * Estructura (rutas de Firestore):
  *   usuarios/{uid}                                -> PerfilUsuario (Tabla 1 del dataset)
  *   usuarios/{uid}/registrosDiarios/{YYYY-MM-DD}  -> RegistroDiario + detalle del dia (Tabla 2)
- *   usuarios/{uid}/entrenamientoSemanal/{lunes}   -> sesiones completadas de la semana
+ *   usuarios/{uid}/entrenamientoSemanal/{lunes}   -> sesiones completadas y series (carga y repeticiones) de la semana
  *   usuarios/{uid}/configuracion/{nombre}         -> planes personalizados del usuario
  */
 
@@ -58,11 +58,25 @@ export interface RegistroDiarioDetalle extends RegistroDiario {
   actualizado: string;
 }
 
+/**
+ * Una serie realizada. `cantidad` son repeticiones, o segundos/minutos en los
+ * ejercicios por tiempo (plancha, caminata). `cargaKg` es 0 con peso corporal.
+ */
+export interface SerieRegistrada {
+  ejercicioId: string;
+  fecha: string;
+  numero: number;
+  cargaKg: number;
+  cantidad: number;
+}
+
 /** Progreso de entrenamiento de una semana (clave: fecha del lunes). */
 export interface SemanaEntrenamiento {
   inicioSemana: string;
   rutinasCompletadas: string[];
   ejerciciosCompletados: string[];
+  /** Lista (no mapa) para que el guardado con merge la reemplace completa. */
+  series: SerieRegistrada[];
   actualizado: string;
 }
 
@@ -230,6 +244,7 @@ export async function obtenerSemanaEntrenamiento(
     inicioSemana: lunes,
     rutinasCompletadas: [],
     ejerciciosCompletados: [],
+    series: [],
     actualizado: new Date().toISOString(),
     ...(guardada ?? {}),
   };
@@ -250,7 +265,9 @@ export async function listarSemanasEntrenamiento(uid: string): Promise<SemanaEnt
   const semanas = await listarColeccion<SemanaEntrenamiento>(
     `usuarios/${uid}/entrenamientoSemanal`
   );
-  return semanas.sort((a, b) => a.inicioSemana.localeCompare(b.inicioSemana));
+  return semanas
+    .map((semana) => ({ ...semana, series: semana.series ?? [] }))
+    .sort((a, b) => a.inicioSemana.localeCompare(b.inicioSemana));
 }
 
 /* ---------------------- Configuracion del usuario ---------------------- */
